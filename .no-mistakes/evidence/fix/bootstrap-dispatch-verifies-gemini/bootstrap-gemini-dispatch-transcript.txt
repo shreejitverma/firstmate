@@ -1,0 +1,60 @@
+=== BEFORE fix (base 795e5e4): gemini rule + claude default
+config/crew-dispatch.json: {"rules":[{"when":"multimodal evidence, long-context document digestion","use":{"harness":"gemini"}}],"default":{"harness":"claude"}}
+bootstrap exit: 0
+CREW_DISPATCH lines:
+CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: gemini
+
+=== AFTER fix (4abb464): gemini rule + claude default
+config/crew-dispatch.json: {"rules":[{"when":"multimodal evidence, long-context document digestion","use":{"harness":"gemini"}}],"default":{"harness":"claude"}}
+bootstrap exit: 0
+CREW_DISPATCH lines:
+  (none)
+
+=== AFTER fix: gemini as default profile
+config/crew-dispatch.json: {"rules":[],"default":{"harness":"gemini"}}
+bootstrap exit: 0
+CREW_DISPATCH lines:
+  (none)
+
+=== AFTER fix: gemini inside a quota-balanced pool with claude
+config/crew-dispatch.json: {"rules":[{"when":"research","select":"quota-balanced","use":[{"harness":"claude"},{"harness":"gemini"}]}],"default":{"harness":"claude"}}
+bootstrap exit: 0
+CREW_DISPATCH lines:
+  (none)
+
+=== AFTER fix: gemini with model and effort (record-and-omit contract, accepted by design)
+config/crew-dispatch.json: {"rules":[{"when":"video review","use":{"harness":"gemini","model":"gemini-3.8-flash-high","effort":"high"}}],"default":{"harness":"claude"}}
+bootstrap exit: 0
+CREW_DISPATCH lines:
+  (none)
+
+=== ADVERSARIAL: unknown harness is still flagged
+config/crew-dispatch.json: {"rules":[{"when":"anything","use":{"harness":"spaceship"}}],"default":{"harness":"claude"}}
+bootstrap exit: 0
+CREW_DISPATCH lines:
+CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: spaceship
+
+=== ADVERSARIAL: near-miss names (Gemini, gemini-cli, gemini with space) are still flagged
+config/crew-dispatch.json: {"rules":[{"when":"a","use":{"harness":"Gemini"}},{"when":"b","use":{"harness":"gemini-cli"}},{"when":"c","use":{"harness":"gemini "}}],"default":{"harness":"claude"}}
+bootstrap exit: 0
+CREW_DISPATCH lines:
+CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: Gemini, gemini , gemini-cli
+
+=== ADVERSARIAL: gemini alongside an unverified harness reports only the unverified one
+config/crew-dispatch.json: {"rules":[{"when":"a","use":{"harness":"gemini"}},{"when":"b","use":{"harness":"spaceship"}}],"default":{"harness":"claude"}}
+bootstrap exit: 0
+CREW_DISPATCH lines:
+CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: spaceship
+
+=== ADVERSARIAL: gemini with malformed effort type is still flagged
+config/crew-dispatch.json: {"rules":[{"when":"a","use":{"harness":"gemini","effort":3}}],"default":{"harness":"claude"}}
+bootstrap exit: 0
+CREW_DISPATCH lines:
+CREW_DISPATCH: invalid config/crew-dispatch.json - use profile model and effort must be non-empty strings when present
+
+=== REGRESSION GUARD: claude invalid effort is still flagged next to a gemini rule
+config/crew-dispatch.json: {"rules":[{"when":"a","use":{"harness":"gemini"}}],"default":{"harness":"claude","effort":"ultra"}}
+bootstrap exit: 0
+CREW_DISPATCH lines:
+CREW_DISPATCH: invalid config/crew-dispatch.json - invalid effort: claude:ultra
+
