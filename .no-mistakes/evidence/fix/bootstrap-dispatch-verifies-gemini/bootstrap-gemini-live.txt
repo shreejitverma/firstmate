@@ -1,0 +1,76 @@
+config/crew-dispatch.json under test:
+{
+  "rules": [
+    {
+      "when": "multimodal evidence, very large corpus ingestion, or Google platform investigations",
+      "use": {
+        "harness": "gemini"
+      }
+    }
+  ],
+  "default": {
+    "harness": "claude"
+  }
+}
+
+### S1-before: BASE 69d660a, no typed key, gemini rule + claude default
+$ FM_HOME=/tmp/fm-gemini-live.J3LvaQ/h1 FM_ROOT_OVERRIDE=/tmp/fm-gemini-live.J3LvaQ/h1 /tmp/fm-gemini-live.J3LvaQ/base/bin/fm-bootstrap.sh
+exit=0
+--- full output ---
+CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: gemini
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+--- CREW_DISPATCH lines ---
+CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: gemini
+
+### S1-after: TARGET efb01fe, no typed key, gemini rule + claude default
+$ FM_HOME=/tmp/fm-gemini-live.J3LvaQ/h2 FM_ROOT_OVERRIDE=/tmp/fm-gemini-live.J3LvaQ/h2 /Users/shreejitverma/.no-mistakes/worktrees/bd009b228db0/01M2PM2JKKH83F0Z6S87V5BH11/bin/fm-bootstrap.sh
+exit=0
+--- full output ---
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+--- CREW_DISPATCH lines ---
+(none)
+
+### S2: TARGET, typed key present in .env, same config
+$ FM_HOME=/tmp/fm-gemini-live.J3LvaQ/h3 FM_ROOT_OVERRIDE=/tmp/fm-gemini-live.J3LvaQ/h3 /Users/shreejitverma/.no-mistakes/worktrees/bd009b228db0/01M2PM2JKKH83F0Z6S87V5BH11/bin/fm-bootstrap.sh
+exit=0
+--- full output ---
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+--- CREW_DISPATCH lines ---
+(none)
+
+### S3 adversarial: TARGET, unknown harness spaceship still rejected (gemini default)
+$ FM_HOME=/tmp/fm-gemini-live.J3LvaQ/h4 FM_ROOT_OVERRIDE=/tmp/fm-gemini-live.J3LvaQ/h4 /Users/shreejitverma/.no-mistakes/worktrees/bd009b228db0/01M2PM2JKKH83F0Z6S87V5BH11/bin/fm-bootstrap.sh
+exit=0
+--- full output ---
+CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: spaceship
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+--- CREW_DISPATCH lines ---
+CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: spaceship
+
+### S4 adversarial: TARGET, case-variant 'Gemini' is not accepted
+$ FM_HOME=/tmp/fm-gemini-live.J3LvaQ/h5 FM_ROOT_OVERRIDE=/tmp/fm-gemini-live.J3LvaQ/h5 /Users/shreejitverma/.no-mistakes/worktrees/bd009b228db0/01M2PM2JKKH83F0Z6S87V5BH11/bin/fm-bootstrap.sh
+exit=0
+--- full output ---
+CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: Gemini
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+--- CREW_DISPATCH lines ---
+CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: Gemini
+
+### S5: TARGET, gemini with model+effort accepted (record-and-omit contract)
+$ FM_HOME=/tmp/fm-gemini-live.J3LvaQ/h6 FM_ROOT_OVERRIDE=/tmp/fm-gemini-live.J3LvaQ/h6 /Users/shreejitverma/.no-mistakes/worktrees/bd009b228db0/01M2PM2JKKH83F0Z6S87V5BH11/bin/fm-bootstrap.sh
+exit=0
+--- full output ---
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+--- CREW_DISPATCH lines ---
+(none)
+
+### S1-after (git-initialized scratch home, stdout+stderr): TARGET efb01fe, no typed key
+exit=0
+output bytes=0
+
