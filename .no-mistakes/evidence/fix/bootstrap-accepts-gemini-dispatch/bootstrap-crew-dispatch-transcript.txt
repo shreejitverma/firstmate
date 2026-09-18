@@ -1,0 +1,76 @@
+firstmate bootstrap: crew-dispatch gemini validation, driven end to end
+base   = 9bc051f (before the fix)
+head   = 979a857 (this change)
+home   = isolated FM_HOME, real installed toolchain on PATH
+
+############################################################
+# S1: the user's real crew-dispatch.json, agy swapped for the bare
+#     gemini harness, at session start with no typed dispatch key
+############################################################
+--- config (gemini profiles) ---
+[{"harness":"gemini","model":"gemini-3.1-pro-high"},{"harness":"gemini","model":"gemini-3.8-flash-medium"}]
+
+$ FM_HOME=<lab> bin/fm-bootstrap.sh     # base 9bc051f
+CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: gemini
+
+$ FM_HOME=<lab> bin/fm-bootstrap.sh     # head 979a857
+(silent - bootstrap reports no actionable problem)
+
+$ TYPESAFE_API_KEY=test-key bin/fm-bootstrap.sh   # head, typed resolution on
+(silent - bootstrap reports no actionable problem)
+
+############################################################
+# S2 (adversarial): an unverified harness must still be refused,
+#     with and without the typed key
+############################################################
+--- config: {"harness":"spaceship"} ---
+$ bin/fm-bootstrap.sh                             # head, no key
+CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: spaceship
+$ TYPESAFE_API_KEY=test-key bin/fm-bootstrap.sh   # head, typed
+CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: spaceship
+
+# near-miss names that look like real adapters but are not verified
+  harness=gemini-cli   -> CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: gemini-cli
+  harness=Gemini       -> CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: Gemini
+  harness=gemini-pro   -> CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: gemini-pro
+  harness=aider        -> CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: aider
+
+############################################################
+# S3 (adversarial): resolver-only fields stay gated on the typed key
+#     after the harness set became unconditional
+############################################################
+--- config: gemini rule carrying bad approval, bad rule floor, bad provider, bad profile floor ---
+$ bin/fm-bootstrap.sh                             # head, no key: inert fields ignored
+(silent - bootstrap reports no actionable problem)
+$ TYPESAFE_API_KEY=test-key bin/fm-bootstrap.sh   # head, typed: fields validated
+CREW_DISPATCH: invalid config/crew-dispatch.json - use profile model and effort must be non-empty strings, and provider must match ^[a-z0-9]+(-[a-z0-9]+)*\z when present
+
+############################################################
+# S4 (adversarial, drift guard): add a hypothetical new verified adapter
+#     'warpdrive' to fm_control_harnesses only, and see whether the
+#     no-key bootstrap path follows that single owner
+############################################################
+$ bin/fm-bootstrap.sh   # base 9bc051f + warpdrive in fm_control_harnesses, no key
+CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: warpdrive
+   ^ the drift: the owner verified it, the second hard-coded list did not
+
+$ bin/fm-bootstrap.sh   # head 979a857 + warpdrive in fm_control_harnesses, no key
+(silent - bootstrap reports no actionable problem)
+   ^ head follows the single owner, so the same drift cannot recur
+
+############################################################
+# S5: every name fm_control_harnesses owns validates on the no-key path
+############################################################
+  claude     -> (silent - bootstrap reports no actionable problem)
+  codex      -> (silent - bootstrap reports no actionable problem)
+  opencode   -> (silent - bootstrap reports no actionable problem)
+  pi         -> (silent - bootstrap reports no actionable problem)
+  pi-signed  -> (silent - bootstrap reports no actionable problem)
+  grok       -> (silent - bootstrap reports no actionable problem)
+  kimi       -> (silent - bootstrap reports no actionable problem)
+  cursor     -> (silent - bootstrap reports no actionable problem)
+  gemini     -> (silent - bootstrap reports no actionable problem)
+  muse       -> (silent - bootstrap reports no actionable problem)
+  rovo       -> (silent - bootstrap reports no actionable problem)
+  omp        -> (silent - bootstrap reports no actionable problem)
+  agy        -> (silent - bootstrap reports no actionable problem)

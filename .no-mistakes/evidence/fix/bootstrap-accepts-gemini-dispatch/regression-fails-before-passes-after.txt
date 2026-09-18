@@ -1,0 +1,12 @@
+Regression proof for the no-key gemini assertion in tests/fm-bootstrap.test.sh
+(the added case: a plain gemini rule with a claude default, no .env, no key)
+
+1. head test file run against the BASE implementation (9bc051f + head tests):
+   $ bin/fm-test-run.sh tests/fm-bootstrap.test.sh
+   not ok - no-key bootstrap must accept a plain Gemini rule with a claude default, got: CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: gemini
+   FM_TEST_SUMMARY total=1 failed=1 skipped_gate=0
+
+2. same test file at HEAD 979a857:
+   $ bin/fm-test-run.sh tests/fm-bootstrap.test.sh
+   ok - bootstrap gates resolver fields on the typed key and accepts Gemini with or without it
+   FM_TEST_SUMMARY total=1 failed=0 skipped_gate=0
