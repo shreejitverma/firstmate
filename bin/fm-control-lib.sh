@@ -66,11 +66,17 @@ fm_control_harnesses() {
 }
 
 fm_control_harness_supported() {  # <harness>
-  local harness
+  # Reads the whole list instead of returning from inside the loop. An early
+  # return closes the process substitution's pipe while the producer may still
+  # have output pending, and because a job runner can pass down an ignored
+  # SIGPIPE the producer reports that as `printf: write error: Broken pipe` on
+  # the shared stderr rather than dying quietly - contaminating the output of
+  # every caller that reads bin/fm-control.sh with stderr merged in.
+  local harness supported=1
   while read -r harness; do
-    [ "$harness" = "${1-}" ] && return 0
+    [ "$harness" = "${1-}" ] && supported=0
   done < <(fm_control_harnesses)
-  return 1
+  return "$supported"
 }
 
 # The verified adapter a RECORDED harness value belongs to. Every table below

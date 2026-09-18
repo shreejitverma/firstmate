@@ -345,6 +345,34 @@ test_unverified_harness_is_refused() {
   pass "fm-control: a harness with no verified control mechanics is refused, not guessed at"
 }
 
+# The lookup must consume its whole producer even once the name matches. A
+# match on an early name used to return out of the read loop and close the
+# process substitution's pipe under the producer, so a producer whose output
+# was not fully written yet reported `printf: write error: Broken pipe`. A job
+# runner that ignores SIGPIPE turns that into a stderr line rather than a quiet
+# death, and every caller that reads fm-control.sh with stderr merged in then
+# parses the warning as the first line of the answer. The stub reproduces that
+# split write deterministically; the real producer's timing decides whether the
+# race is lost on any given run.
+test_harness_lookup_drains_its_producer() {
+  local list first rest noise
+  list=$(fm_control_harnesses)
+  first=${list%%$'\n'*}
+  rest=${list#*$'\n'}
+  noise=$(
+    {
+      trap '' PIPE
+      # shellcheck disable=SC2329 # Invoked as the producer fm_control_harness_supported reads.
+      fm_control_harnesses() { printf '%s\n' "$first"; sleep 0.3; printf '%s\n' "$rest"; }
+      fm_control_harness_supported "$first" \
+        || printf 'the first verified harness was not recognized\n'
+    } 2>&1
+  )
+  [ -z "$noise" ] \
+    || fail "a matched harness lookup must leave its producer nothing to fail on, got: $noise"
+  pass "fm-control: a matched harness lookup drains its producer and stays silent"
+}
+
 # --- 2. backend capability matrix -------------------------------------------
 
 test_backend_key_capability_matrix() {
@@ -883,6 +911,7 @@ test_exit_types_each_harness_verified_command
 test_interrupt_sends_each_harness_verified_key
 test_opencode_interrupts_twice_and_others_once
 test_unverified_harness_is_refused
+test_harness_lookup_drains_its_producer
 test_harness_family_resolution
 test_prefixed_recorded_harness_reaches_each_control_verb
 test_backend_key_capability_matrix
