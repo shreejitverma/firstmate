@@ -1,0 +1,17 @@
+merge parents:
+4f4ecbef46bfd8705f56f61f30f6a21cba4b6901 21b612446ab782f7a4c292abf701801edbbe3cc3 da9607d7bb945e499fd70d4bf548edb37247d0cc Merge upstream/main into main (1 upstream commit)
+upstream commit:
+da9607d7bb945e499fd70d4bf548edb37247d0cc fix(bin): allow cleanup of windowless legacy task records (#5236)
+files touched by upstream da9607d vs merge result (empty diff = upstream change fully present):
+bin/fm-afk-launch.sh: 0 diff lines
+bin/fm-teardown.sh: 0 diff lines
+tests/fm-afk-launch.test.sh: 0 diff lines
+tests/fm-afk-return.test.sh: 0 diff lines
+tests/fm-teardown.test.sh: 0 diff lines
+fork-only content kept (diff 21b6124 -> 4f4ecbe limited to upstream files):
+ bin/fm-afk-launch.sh        |  22 ++++--
+ bin/fm-teardown.sh          | 114 ++++++++++++++++++++++-------
+ tests/fm-afk-launch.test.sh |  32 +++++++--
+ tests/fm-afk-return.test.sh |  47 ++++++++++++
+ tests/fm-teardown.test.sh   | 172 ++++++++++++++++++++++++++++++++++++++++++++
+ 5 files changed, 354 insertions(+), 33 deletions(-)
