@@ -490,7 +490,7 @@ const readRows = () => existsSync(process.env.FM_ARM_LOG)
   : [];
 // Poll for the successor and the delivery instead of sleeping a fixed time: the
 // successor launch goes through a login shell whose startup cost is the
-// operator's profile, not a property of the ordering under test.
+// operator profile, not a property of the ordering under test.
 const deadline = Date.now() + Number(process.env.FM_WAIT_MS);
 let rows = readRows();
 while (Date.now() < deadline
