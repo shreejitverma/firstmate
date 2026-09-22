@@ -63,6 +63,13 @@ unset FM_TASK_ID
 # against an ambient override sets TASKS_AXI_FILE itself.
 unset TASKS_AXI_FILE TASKS_AXI_BACKEND
 
+# Clear the typed dispatch resolution key. An operator shell may export
+# TYPESAFE_API_KEY, and bin/fm-dispatch-resolve.sh and bin/fm-bootstrap.sh both
+# read the environment AHEAD of the fixture home's .env, so an ambient key turns
+# typed resolution on in every no-key case and flips its verdict. A case that
+# verifies the key sets TYPESAFE_API_KEY itself.
+unset TYPESAFE_API_KEY TYPESAFE_API_KEY_PRIVATE
+
 # Resolve the repo root from this library's own location. Consumed by sourcing
 # test files, not by this library, so it reads as "unused" here.
 # shellcheck disable=SC2034
