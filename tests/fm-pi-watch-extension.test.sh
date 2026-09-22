@@ -458,7 +458,7 @@ trap 'exit 0' TERM INT
 while [ ! -e "$FM_STOP_FILE" ]; do sleep 0.02; done
 SH
   chmod +x "$repo/bin/fm-watch-arm.sh"
-  out=$(PLUGIN="$plugin" FM_HOME="$home" FM_ROOT_OVERRIDE="$repo" FM_ARM_LOG="$log" FM_STOP_FILE="$stop" node --input-type=module 2>&1 <<'EOF'
+  out=$(PLUGIN="$plugin" FM_HOME="$home" FM_ROOT_OVERRIDE="$repo" FM_ARM_LOG="$log" FM_STOP_FILE="$stop" FM_WAIT_MS="$((ARM_READY_TIMEOUT_MS * 2))" node --input-type=module 2>&1 <<'EOF'
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
@@ -485,10 +485,22 @@ writeFileSync(`${process.env.FM_HOME}/state/.lock`, `${process.pid}\n`);
 const mod = await import(pathToFileURL(process.env.PLUGIN).href);
 mod.default(pi);
 await tool.execute("initial-arm", {}, undefined, undefined, {});
-await new Promise((resolve) => setTimeout(resolve, 1200));
-const rows = existsSync(process.env.FM_ARM_LOG)
+const readRows = () => existsSync(process.env.FM_ARM_LOG)
   ? readFileSync(process.env.FM_ARM_LOG, "utf8").trim().split("\n")
   : [];
+// Poll for the successor and the delivery instead of sleeping a fixed time: the
+// successor launch goes through a login shell whose startup cost is the
+// operator profile, not a property of the ordering under test.
+const deadline = Date.now() + Number(process.env.FM_WAIT_MS);
+let rows = readRows();
+while (Date.now() < deadline
+  && !(rows.filter((row) => row.startsWith("arm=")).length >= 2 && rows.includes("delivery"))) {
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  rows = readRows();
+}
+// Settle briefly so a spurious extra arm still fails the exact-count check.
+await new Promise((resolve) => setTimeout(resolve, 200));
+rows = readRows();
 const armIndexes = rows.map((row, index) => row.startsWith("arm=") ? index : -1).filter((index) => index >= 0);
 const closeIndex = rows.indexOf("predecessor-closed");
 const deliveryIndex = rows.indexOf("delivery");
