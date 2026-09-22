@@ -1,0 +1,9 @@
+run 1 exit=1
+OUT: expected a successor after the predecessor close: arm=34076 | actionable-emitted
+not ok - Pi actionable output must wait for predecessor close before successor restoration: expected exit 0, got 1
+run 2 exit=1
+OUT: expected a successor after the predecessor close: arm=39350 | actionable-emitted
+not ok - Pi actionable output must wait for predecessor close before successor restoration: expected exit 0, got 1
+run 3 exit=1
+OUT: expected a successor after the predecessor close: arm=43956 | actionable-emitted
+not ok - Pi actionable output must wait for predecessor close before successor restoration: expected exit 0, got 1

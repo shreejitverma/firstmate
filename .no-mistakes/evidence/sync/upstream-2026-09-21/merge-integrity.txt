@@ -1,0 +1,28 @@
+fork-only files before merge:
+bin/fm-bootstrap.sh
+bin/fm-control-lib.sh
+docs/configuration.md
+docs/verification/dispatch-resolve.md
+tests/fm-bootstrap.test.sh
+tests/fm-control.test.sh
+fork-only files after merge (vs upstream tip):
+bin/fm-bootstrap.sh
+bin/fm-control-lib.sh
+docs/configuration.md
+docs/verification/dispatch-resolve.md
+tests/fm-bootstrap.test.sh
+tests/fm-control.test.sh
+same fork delta: bin/fm-bootstrap.sh
+same fork delta: bin/fm-control-lib.sh
+same fork delta: tests/fm-control.test.sh
+same fork delta: tests/fm-bootstrap.test.sh
+same fork delta: docs/configuration.md
+upstream files missing upstream content in merge:
+  touched by fork: bin/fm-control-lib.sh
+  touched by fork: docs/configuration.md
+  touched by fork: docs/verification/dispatch-resolve.md
+  touched by fork: tests/fm-control.test.sh
+bin/fm-control-lib.sh: upstream added lines missing from merge = 0
+docs/configuration.md: upstream added lines missing from merge = 0
+docs/verification/dispatch-resolve.md: upstream added lines missing from merge = 0
+tests/fm-control.test.sh: upstream added lines missing from merge = 0

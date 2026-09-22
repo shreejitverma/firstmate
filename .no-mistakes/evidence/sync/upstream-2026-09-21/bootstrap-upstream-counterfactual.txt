@@ -1,0 +1,2 @@
+merged-tree-with-upstream-bootstrap exit=1
+not ok - no-key bootstrap must accept a plain Gemini rule with a claude default, got: CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: gemini

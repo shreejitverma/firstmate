@@ -1,0 +1,9 @@
+## merged bin/fm-control-lib.sh (stderr merged)
+claude: supported
+gemini: supported
+bogus: refused
+## upstream 3fcbc6c bin/fm-control-lib.sh (stderr merged)
+claude: supported
+gemini: supported
+/tmp/bp.sh: line 4: printf: write error: Broken pipe
+bogus: refused
