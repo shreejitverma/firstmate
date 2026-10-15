@@ -1,0 +1,17 @@
+## drained lookup (this change), SIGPIPE ignored, stdout+stderr merged
+rc(claude)=0
+rc(spaceship)=1
+
+## early-return lookup (contrast), same conditions
+rc(claude)=0
+rc(spaceship)=1
+/tmp/fmlive.QlMr/sigpipe.sh: line 12: printf: Broken pipe
+/tmp/fmlive.QlMr/sigpipe.sh: line 12: printf: write error: Broken pipe
+
+## real producer, gemini/devin/commandcode/spaceship lookups, SIGPIPE ignored, 200 iterations, stderr lines:
+       0
+ 200 claude=0
+ 200 commandcode=0
+ 200 devin=0
+ 200 gemini=0
+ 200 spaceship=1

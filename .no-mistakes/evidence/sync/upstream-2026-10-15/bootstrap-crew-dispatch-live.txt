@@ -1,0 +1,21 @@
+## fork HEAD 7834e19 (this change)
+[fork] plain gemini rule, claude default        key=nokey rc=0 CREW_DISPATCH=<none: config accepted>
+[fork] plain gemini rule, claude default        key=key   rc=0 CREW_DISPATCH=<none: config accepted>
+[fork] gemini model+provider rule               key=nokey rc=0 CREW_DISPATCH=<none: config accepted>
+[fork] devin default                            key=nokey rc=0 CREW_DISPATCH=<none: config accepted>
+[fork] commandcode rule                         key=nokey rc=0 CREW_DISPATCH=<none: config accepted>
+[fork] unknown harness spaceship                key=nokey rc=0 CREW_DISPATCH=CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: spaceship
+[fork] unknown harness spaceship                key=key   rc=0 CREW_DISPATCH=CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: spaceship
+[fork] unknown default harness gemini2          key=nokey rc=0 CREW_DISPATCH=CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: gemini2
+[fork] near-miss harness Gemini (case)          key=nokey rc=0 CREW_DISPATCH=CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: Gemini
+
+## parent upstream fc8972c (for contrast)
+[parent] plain gemini rule, claude default        key=nokey rc=0 CREW_DISPATCH=CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: gemini
+[parent] plain gemini rule, claude default        key=key   rc=0 CREW_DISPATCH=<none: config accepted>
+[parent] gemini model+provider rule               key=nokey rc=0 CREW_DISPATCH=CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: gemini
+[parent] devin default                            key=nokey rc=0 CREW_DISPATCH=<none: config accepted>
+[parent] commandcode rule                         key=nokey rc=0 CREW_DISPATCH=<none: config accepted>
+[parent] unknown harness spaceship                key=nokey rc=0 CREW_DISPATCH=CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: spaceship
+[parent] unknown harness spaceship                key=key   rc=0 CREW_DISPATCH=CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: spaceship
+[parent] unknown default harness gemini2          key=nokey rc=0 CREW_DISPATCH=CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: gemini2
+[parent] near-miss harness Gemini (case)          key=nokey rc=0 CREW_DISPATCH=CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: Gemini

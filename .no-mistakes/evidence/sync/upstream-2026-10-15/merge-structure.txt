@@ -1,0 +1,21 @@
+## merge structure
+commit 17b7af3
+parents d30c08d945df2a41705dbbbfb862ef429fa75578 fc8972cdc16f988a84588ac6f4ce4e3b0abf20b9
+subject Merge upstream/main into main (234 upstream commits)
+upstream commits integrated: 234
+is upstream tip an ancestor of HEAD: yes
+
+## fork-only divergence from upstream tip fc8972c
+ bin/fm-bootstrap.sh                   | 11 ++++++-----
+ bin/fm-control-lib.sh                 |  6 ++++++
+ docs/configuration.md                 |  9 ++++++---
+ docs/verification/dispatch-resolve.md |  2 +-
+ tests/fm-bootstrap.test.sh            | 16 ++++++++++++----
+ tests/fm-control.test.sh              | 29 +++++++++++++++++++++++++++++
+ tests/fm-pi-watch-extension.test.sh   | 18 +++++++++++++++---
+ tests/lib.sh                          |  7 +++++++
+ 8 files changed, 82 insertions(+), 16 deletions(-)
+
+## push remote
+origin	https://github.com/shreejitverma/firstmate.git (fetch)
+origin	https://github.com/shreejitverma/firstmate.git (push)
