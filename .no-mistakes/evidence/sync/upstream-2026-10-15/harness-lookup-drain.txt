@@ -1,0 +1,14 @@
+=== FORK fm_control_harness_supported, SIGPIPE ignored, producer splits its write (stdout+stderr merged) ===
+lookup(claude)=supported
+lookup(gemini)=supported
+lookup(spaceship)=NOT supported
+
+=== UPSTREAM fc8972c, same conditions ===
+lookup(claude)=supported
+lookup(gemini)=supported
+lookup(spaceship)=NOT supported
+
+=== CONTROL: hypothetical early-return lookup (the regression the drain guards against), same conditions ===
+lookup(claude)=supported
+_: line 5: printf: Broken pipe
+_: line 5: printf: write error: Broken pipe

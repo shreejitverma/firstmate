@@ -1,0 +1,28 @@
+## merge commit parents (17b7af3)
+17b7af3d5f014624e6237334ea315cad59d86f37
+parents: d30c08d945df2a41705dbbbfb862ef429fa75578 fc8972cdc16f988a84588ac6f4ce4e3b0abf20b9
+subject: Merge upstream/main into main (234 upstream commits)
+
+## upstream commits integrated (d30c08d..fc8972c, first-parent excluded)
+234
+## is fc8972c an ancestor of HEAD (later upstream merges stay possible)
+yes
+
+## c50b1e0 tree vs its parent (empty commit => no output)
+parents: 6f4b93f629d70fdf8260760e1741befcca16cd85
+subject: ci: ask GitHub for the pull_request workflows again
+
+## files differing from upstream parent fc8972c
+ bin/fm-bootstrap.sh                   | 11 ++++++-----
+ bin/fm-control-lib.sh                 |  6 ++++++
+ docs/configuration.md                 |  9 ++++++---
+ docs/verification/dispatch-resolve.md |  2 +-
+ tests/fm-bootstrap.test.sh            | 16 ++++++++++++----
+ tests/fm-control.test.sh              | 29 +++++++++++++++++++++++++++++
+ tests/fm-pi-watch-extension.test.sh   | 18 +++++++++++++++---
+ tests/lib.sh                          |  7 +++++++
+ 8 files changed, 82 insertions(+), 16 deletions(-)
+
+## remotes (read-only)
+origin	https://github.com/shreejitverma/firstmate.git (fetch)
+origin	https://github.com/shreejitverma/firstmate.git (push)

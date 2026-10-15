@@ -1,0 +1,19 @@
+=== FORK c50b1e0 (~/.no-mistakes/worktrees/9d851c9bff33/01M50YKEXCY8MS70JH3VDNWRHR): bin/fm-bootstrap.sh stdout per crew-dispatch.json (empty output = accepted) ===
+plain gemini rule, claude default    typed=nokey rc=0 bootstrap=01M50YKEXCY8MS70JH3VDNWRHR output=[]
+gemini with model+provider           typed=nokey rc=0 bootstrap=01M50YKEXCY8MS70JH3VDNWRHR output=[]
+devin default                        typed=nokey rc=0 bootstrap=01M50YKEXCY8MS70JH3VDNWRHR output=[]
+commandcode default                  typed=nokey rc=0 bootstrap=01M50YKEXCY8MS70JH3VDNWRHR output=[]
+unknown harness spaceship            typed=nokey rc=0 bootstrap=01M50YKEXCY8MS70JH3VDNWRHR output=[CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: spaceship]
+unknown + gemini mixed               typed=nokey rc=0 bootstrap=01M50YKEXCY8MS70JH3VDNWRHR output=[CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: warp9]
+plain gemini rule, claude default    typed=key   rc=0 bootstrap=01M50YKEXCY8MS70JH3VDNWRHR output=[]
+unknown harness spaceship            typed=key   rc=0 bootstrap=01M50YKEXCY8MS70JH3VDNWRHR output=[CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: spaceship]
+
+=== UPSTREAM PARENT fc8972c (git archive extract at /tmp/fmlive-upstream.38ko), same inputs, for comparison ===
+plain gemini rule, claude default    typed=nokey rc=0 bootstrap=fmlive-upstream.38ko output=[CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: gemini]
+gemini with model+provider           typed=nokey rc=0 bootstrap=fmlive-upstream.38ko output=[CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: gemini]
+devin default                        typed=nokey rc=0 bootstrap=fmlive-upstream.38ko output=[]
+commandcode default                  typed=nokey rc=0 bootstrap=fmlive-upstream.38ko output=[]
+unknown harness spaceship            typed=nokey rc=0 bootstrap=fmlive-upstream.38ko output=[CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: spaceship]
+unknown + gemini mixed               typed=nokey rc=0 bootstrap=fmlive-upstream.38ko output=[CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: gemini, warp9]
+plain gemini rule, claude default    typed=key   rc=0 bootstrap=fmlive-upstream.38ko output=[]
+unknown harness spaceship            typed=key   rc=0 bootstrap=fmlive-upstream.38ko output=[CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: spaceship]
