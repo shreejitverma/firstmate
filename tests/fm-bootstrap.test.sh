@@ -1218,6 +1218,11 @@ ROWS
     || fail "typed .env key must activate resolver-field validation, got: $out"
 
   rm -f "$case_dir/home/.env"
+  printf '%s\n' '{"rules":[{"when":"anything","use":{"harness":"spaceship"}}],"default":{"harness":"codex"}}' > "$case_dir/home/config/crew-dispatch.json"
+  out=$(PATH="$fakebin:$BASE_PATH" FM_HOME="$case_dir/home" FM_ROOT_OVERRIDE="$case_dir/home" \
+    FM_FAKE_TREEHOUSE_LEASE_HELP=1 "$ROOT/bin/fm-bootstrap.sh")
+  [ "$out" = 'CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: spaceship' ] \
+    || fail "no-key bootstrap must reject an unknown harness, got: $out"
   printf '%s\n' '{"rules":[{"when":"multimodal evidence","use":{"harness":"gemini"}}],"default":{"harness":"claude"}}' > "$case_dir/home/config/crew-dispatch.json"
   out=$(PATH="$fakebin:$BASE_PATH" FM_HOME="$case_dir/home" FM_ROOT_OVERRIDE="$case_dir/home" \
     FM_FAKE_TREEHOUSE_LEASE_HELP=1 "$ROOT/bin/fm-bootstrap.sh")
@@ -1248,7 +1253,7 @@ ROWS
   child_env=$(cat "$case_dir/child-env.log")
   [ -n "$child_env" ] || fail "bootstrap child environment probe did not run"
   assert_not_contains "$child_env" 'secret-present' "bootstrap children never inherit the typesafe key"
-  pass "bootstrap gates resolver fields on the typed key and accepts Gemini with or without it"
+  pass "bootstrap gates resolver fields on the typed key, accepts verified harnesses with or without it, and rejects an unknown harness with no key"
 }
 
 test_bootstrap_reporting
