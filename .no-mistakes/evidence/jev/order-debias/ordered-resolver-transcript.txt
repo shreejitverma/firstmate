@@ -1,0 +1,153 @@
+### scenario: s1-tier1-fable-ok
+### jev answers (stub endpoint): {"rule":{"choice":"rule_1","confidence":0.95},"rule_reversed":{"choice":"rule_1","confidence":0.93}}
+### quota snapshot: fable-ok.json
+$ FM_HOME=$LAB bin/fm-dispatch-resolve.sh $LAB/brief.md --project risk
+dispatch-resolve:
+  status: clear
+  model: jev-1.14.0   latency_ms: 79   tokens: 1300/80
+  rule: rule_1 (Frontier reasoning: architecture, risky or wide refactors, c)   confidence: 0.94
+  probabilities: rule_1=0.94 rule_2=0.03 default=0.03
+  order: forward=rule_1@0.95 reversed=rule_1@0.93 (averaged)
+  note: rule matched; ordered: first eligible in declared order
+  candidate: claude:fable  provider=claude  scope=all_models  remaining=55%  spendPriority=-0.9  runway=through_reset  bounds=all_models:55%/through_reset,model:fable:40%/through_reset  -> eligible
+  candidate: claude:claude-opus-5-5[1m]  provider=claude  scope=all_models  remaining=55%  spendPriority=-0.9  runway=through_reset  -> eligible
+  candidate: grok:grok-4.7  provider=grok  scope=all_products  remaining=88%  spendPriority=0.95  runway=through_reset  -> eligible
+  candidate: agy:gemini-3.1-pro  provider=agy  scope=all_models  remaining=70%  spendPriority=0.6  runway=through_reset  -> eligible
+  profile: --harness 'claude' --model 'fable' --effort 'high'
+### exit: 0
+
+### scenario: s2-fable-below-floor-falls-to-opus
+### jev answers (stub endpoint): {"rule":{"choice":"rule_1","confidence":0.95},"rule_reversed":{"choice":"rule_1","confidence":0.93}}
+### quota snapshot: fable-below.json
+$ FM_HOME=$LAB bin/fm-dispatch-resolve.sh $LAB/brief.md --project risk
+dispatch-resolve:
+  status: clear
+  model: jev-1.14.0   latency_ms: 18   tokens: 1300/80
+  rule: rule_1 (Frontier reasoning: architecture, risky or wide refactors, c)   confidence: 0.94
+  probabilities: rule_1=0.94 rule_2=0.03 default=0.03
+  order: forward=rule_1@0.95 reversed=rule_1@0.93 (averaged)
+  note: rule matched; ordered: first eligible in declared order
+  candidate: claude:fable  provider=claude  scope=model:fable  remaining=4%  spendPriority=-  runway=through_reset  bounds=all_models:55%/through_reset,model:fable:4%/through_reset  -> not eligible: profile floor model:fable below 10%
+  candidate: claude:claude-opus-5-5[1m]  provider=claude  scope=all_models  remaining=55%  spendPriority=-0.9  runway=through_reset  -> eligible
+  candidate: grok:grok-4.7  provider=grok  scope=all_products  remaining=88%  spendPriority=0.95  runway=through_reset  -> eligible
+  candidate: agy:gemini-3.1-pro  provider=agy  scope=all_models  remaining=70%  spendPriority=0.6  runway=through_reset  -> eligible
+  profile: --harness 'claude' --model 'claude-opus-5-5[1m]' --effort 'high'
+### exit: 0
+
+### scenario: s3-claude-exhausted-falls-to-grok
+### jev answers (stub endpoint): {"rule":{"choice":"rule_1","confidence":0.95},"rule_reversed":{"choice":"rule_1","confidence":0.93}}
+### quota snapshot: claude-exhausted.json
+$ FM_HOME=$LAB bin/fm-dispatch-resolve.sh $LAB/brief.md --project risk
+dispatch-resolve:
+  status: clear
+  model: jev-1.14.0   latency_ms: 16   tokens: 1300/80
+  rule: rule_1 (Frontier reasoning: architecture, risky or wide refactors, c)   confidence: 0.94
+  probabilities: rule_1=0.94 rule_2=0.03 default=0.03
+  order: forward=rule_1@0.95 reversed=rule_1@0.93 (averaged)
+  note: rule matched; ordered: first eligible in declared order
+  candidate: claude:fable  provider=claude  scope=all_models  remaining=0%  spendPriority=-  runway=exhausted_now  bounds=all_models:0%/exhausted_now,model:fable:40%/through_reset  -> not eligible: runway exhausted_now at all_models
+  candidate: claude:claude-opus-5-5[1m]  provider=claude  scope=all_models  remaining=0%  spendPriority=-  runway=exhausted_now  -> not eligible: runway exhausted_now at all_models
+  candidate: grok:grok-4.7  provider=grok  scope=all_products  remaining=88%  spendPriority=0.95  runway=through_reset  -> eligible
+  candidate: agy:gemini-3.1-pro  provider=agy  scope=all_models  remaining=70%  spendPriority=0.6  runway=through_reset  -> eligible
+  profile: --harness 'grok' --model 'grok-4.7' --effort 'high'
+### exit: 0
+
+### scenario: s4-unverifiable-fable-floor-keeps-place
+### jev answers (stub endpoint): {"rule":{"choice":"rule_1","confidence":0.95},"rule_reversed":{"choice":"rule_1","confidence":0.93}}
+### quota snapshot: fable-row-missing.json
+$ FM_HOME=$LAB bin/fm-dispatch-resolve.sh $LAB/brief.md --project risk
+dispatch-resolve:
+  status: clear
+  model: jev-1.14.0   latency_ms: 16   tokens: 1300/80
+  rule: rule_1 (Frontier reasoning: architecture, risky or wide refactors, c)   confidence: 0.94
+  probabilities: rule_1=0.94 rule_2=0.03 default=0.03
+  order: forward=rule_1@0.95 reversed=rule_1@0.93 (averaged)
+  note: rule matched; ordered: first eligible in declared order
+  note: chosen candidate has disclosed quota uncertainty: profile floor model:fable is unverifiable: not rankable
+  candidate: claude:fable  provider=claude  scope=model:fable  remaining=-%  spendPriority=-  runway=-  -> eligible, unranked: profile floor model:fable is unverifiable: not rankable: disclosed uncertainty
+  candidate: claude:claude-opus-5-5[1m]  provider=claude  scope=all_models  remaining=55%  spendPriority=-0.9  runway=through_reset  -> eligible
+  candidate: grok:grok-4.7  provider=grok  scope=all_products  remaining=88%  spendPriority=0.95  runway=through_reset  -> eligible
+  candidate: agy:gemini-3.1-pro  provider=agy  scope=all_models  remaining=70%  spendPriority=0.6  runway=through_reset  -> eligible
+  profile: --harness 'claude' --model 'fable' --effort 'high'
+### exit: 0
+
+### scenario: s5-none-eligible-escalates
+### jev answers (stub endpoint): {"rule":{"choice":"rule_1","confidence":0.95},"rule_reversed":{"choice":"rule_1","confidence":0.93}}
+### quota snapshot: all-exhausted.json
+$ FM_HOME=$LAB bin/fm-dispatch-resolve.sh $LAB/brief.md --project risk
+dispatch-resolve:
+  status: escalate
+  model: jev-1.14.0   latency_ms: 16   tokens: 1300/80
+  rule: rule_1 (Frontier reasoning: architecture, risky or wide refactors, c)   confidence: 0.94
+  probabilities: rule_1=0.94 rule_2=0.03 default=0.03
+  order: forward=rule_1@0.95 reversed=rule_1@0.93 (averaged)
+  reason: no eligible candidate in the declared order of the rule
+  note: rule matched
+  candidate: claude:fable  provider=claude  scope=all_models  remaining=0%  spendPriority=-  runway=exhausted_now  bounds=all_models:0%/exhausted_now,model:fable:40%/through_reset  -> not eligible: runway exhausted_now at all_models
+  candidate: claude:claude-opus-5-5[1m]  provider=claude  scope=all_models  remaining=0%  spendPriority=-  runway=exhausted_now  -> not eligible: runway exhausted_now at all_models
+  candidate: grok:grok-4.7  provider=grok  scope=all_products  remaining=0%  spendPriority=-  runway=exhausted_now  -> not eligible: runway exhausted_now at all_products
+  candidate: agy:gemini-3.1-pro  provider=agy  scope=all_models  remaining=0%  spendPriority=-  runway=exhausted_now  -> not eligible: runway exhausted_now at all_models
+### exit: 0
+
+### scenario: s6-quota-balanced-unchanged
+### jev answers (stub endpoint): {"rule":{"choice":"rule_2","confidence":0.92},"rule_reversed":{"choice":"rule_2","confidence":0.9}}
+### quota snapshot: fable-ok.json
+$ FM_HOME=$LAB bin/fm-dispatch-resolve.sh $LAB/brief.md --project risk
+dispatch-resolve:
+  status: clear
+  model: jev-1.14.0   latency_ms: 17   tokens: 1300/80
+  rule: rule_2 (Standard well-specified coding: scoped features, known-cause)   confidence: 0.91
+  probabilities: rule_1=0.045 rule_2=0.91 default=0.045
+  order: forward=rule_2@0.92 reversed=rule_2@0.9 (averaged)
+  note: rule matched
+  candidate: claude:claude-opus-5-5[1m]  provider=claude  scope=all_models  remaining=55%  spendPriority=-0.9  runway=through_reset  -> eligible
+  candidate: grok:grok-4.7  provider=grok  scope=all_products  remaining=88%  spendPriority=0.95  runway=through_reset  -> eligible
+  candidate: agy:gemini-3.1-pro  provider=agy  scope=all_models  remaining=70%  spendPriority=0.6  runway=through_reset  -> eligible
+  profile: --harness 'grok' --model 'grok-4.7' --effort 'high'
+### exit: 0
+
+### scenario: s7-order-disagreement-still-ambiguous
+### jev answers (stub endpoint): {"rule":{"choice":"rule_1","confidence":0.8},"rule_reversed":{"choice":"rule_2","confidence":0.75}}
+### quota snapshot: fable-ok.json
+$ FM_HOME=$LAB bin/fm-dispatch-resolve.sh $LAB/brief.md --project risk
+dispatch-resolve:
+  status: ambiguous
+  model: jev-1.14.0   latency_ms: 16   tokens: 1300/80
+  rule: rule_1 (Frontier reasoning: architecture, risky or wide refactors, c)   confidence: 0.775
+  probabilities: rule_1=0.4625 rule_2=0.425 default=0.1125
+  order: forward=rule_1@0.8 reversed=rule_2@0.75 (averaged)
+  reason: the two option orders disagree: forward rule_1, reversed rule_2
+  candidate: claude:fable  provider=claude  scope=all_models  remaining=55%  spendPriority=-0.9  runway=through_reset  bounds=all_models:55%/through_reset,model:fable:40%/through_reset  -> eligible
+  candidate: claude:claude-opus-5-5[1m]  provider=claude  scope=all_models  remaining=55%  spendPriority=-0.9  runway=through_reset  -> eligible
+  candidate: grok:grok-4.7  provider=grok  scope=all_products  remaining=88%  spendPriority=0.95  runway=through_reset  -> eligible
+  candidate: agy:gemini-3.1-pro  provider=agy  scope=all_models  remaining=70%  spendPriority=0.6  runway=through_reset  -> eligible
+### exit: 0
+
+### scenario: s8-real-quota-axi-snapshot
+### jev answers (stub endpoint): {"rule":{"choice":"rule_1","confidence":0.95},"rule_reversed":{"choice":"rule_1","confidence":0.93}}
+### quota snapshot: live
+$ FM_HOME=$LAB bin/fm-dispatch-resolve.sh $LAB/brief.md --project risk
+dispatch-resolve:
+  status: clear
+  model: jev-1.14.0   latency_ms: 17   tokens: 1300/80
+  rule: rule_1 (Frontier reasoning: architecture, risky or wide refactors, c)   confidence: 0.94
+  probabilities: rule_1=0.94 rule_2=0.03 default=0.03
+  order: forward=rule_1@0.95 reversed=rule_1@0.93 (averaged)
+  note: rule matched; ordered: first eligible in declared order
+  note: chosen candidate has disclosed quota uncertainty: provider claude unmeasured (unknown)
+  candidate: claude:fable  provider=claude  scope=all_models  remaining=-%  spendPriority=-  runway=unknown  bounds=all_models:-%/unknown,model:fable:-%/unknown  -> eligible, unranked: provider claude unmeasured (unknown): disclosed uncertainty
+  candidate: claude:claude-opus-5-5[1m]  provider=claude  scope=all_models  remaining=-%  spendPriority=-  runway=unknown  -> eligible, unranked: provider claude unmeasured (unknown): disclosed uncertainty
+  candidate: grok:grok-4.7  provider=grok  scope=all_products  remaining=0%  spendPriority=-  runway=exhausted_now  -> not eligible: runway exhausted_now at all_products
+  candidate: agy:gemini-3.1-pro  provider=agy  -> eligible, unranked: no applicable quota row for provider agy: disclosed uncertainty
+  profile: --harness 'claude' --model 'fable' --effort 'high'
+### exit: 0
+
+### scenario: s9-unknown-select-rejected-by-resolver (config has select: first-come)
+### scenario: s9-unknown-select
+### jev answers (stub endpoint): {"rule":{"choice":"rule_1","confidence":0.95},"rule_reversed":{"choice":"rule_1","confidence":0.93}}
+### quota snapshot: fable-ok.json
+$ FM_HOME=$LAB bin/fm-dispatch-resolve.sh $LAB/brief.md --project risk
+error: malformed rules file: /var/folders/8l/kzhwlm_x2hb8b1rslwrfp8qm0000gn/T//fm-lab.E9P27w/config/crew-dispatch.json - unknown select: first-come
+### exit: 2
+
+request sent to Jev stub: no

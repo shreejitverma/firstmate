@@ -1,0 +1,9 @@
+### bootstrap with the Tier 1 select: ordered config (expect no CREW_DISPATCH line)
+{"select":"ordered","use":["claude:fable","claude:claude-opus-5-5[1m]","grok:grok-4.7","agy:gemini-3.1-pro"]}
+{"select":"quota-balanced","use":["claude:claude-opus-5-5[1m]","grok:grok-4.7","agy:gemini-3.1-pro"]}
+### exit: 0
+(CREW_DISPATCH lines: 0)
+
+### bootstrap with an unknown select value (expect CREW_DISPATCH unknown select)
+CREW_DISPATCH: invalid config/crew-dispatch.json - unknown select: first-come
+### exit: 0
