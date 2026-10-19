@@ -1378,7 +1378,7 @@ No qualifying option, or two equally probable qualifying options, produces `ambi
 
 Every result above exits 0.
 
-- The response must carry both the `rule` and the `rule_reversed` answer as valid Choice answers, or the result is `error`; each answer's probabilities must contain exactly every offered choice, use numeric values from 0 through 1, and sum to approximately 1 within 0.01.
+- The response must carry both the `rule` and the `rule_reversed` answer as valid Choice answers, or the result is `error`; each answer's choice must name a rule in the file or `default`, and its probabilities must contain exactly every offered choice, use numeric values from 0 through 1, and sum to approximately 1 within 0.01.
 - Only a usage or configuration error exits 2: an unreadable brief, an existing but unreadable or malformed canonical rules file, or missing `jq`, each reported and never selected around.
 - Missing `curl` is a normal structured `error` outcome with exit 0 so firstmate uses today's routing.
 
