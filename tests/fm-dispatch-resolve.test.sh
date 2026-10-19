@@ -1029,7 +1029,15 @@ jq '.rules[0].use = [{"harness": "kimi", "model": "kimi-code/k3"}, {"harness": "
 reset_log
 TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
 assert_contains "$out" "  profile: --harness 'kimi' --model 'kimi-code/k3'" "an eligible first candidate with unmeasured quota keeps its declared place"
-assert_contains "$out" '  note: chosen candidate quota is unmeasured: provider kimi unmeasured (unknown)' "the chosen candidate's quota uncertainty is disclosed"
+assert_contains "$out" '  note: chosen candidate has disclosed quota uncertainty: provider kimi unmeasured (unknown)' "the chosen candidate's quota uncertainty is disclosed"
+
+jq '.rules[0].use = [{"harness": "claude", "model": "fable", "floor": {"scope": "model:fable", "min_percent": 10}}, {"harness": "codex", "model": "gpt-5.6-sol"}]' "$ORDERED_RULES" > "$RULES"
+reset_log
+TYPESAFE_API_KEY=$KEY QUOTA_AXI_FIXTURE="$MISSING_RULE_FLOOR" run code out err "$BRIEF"
+assert_contains "$out" '  status: clear' "an ordered first candidate with an unverifiable profile floor still resolves"
+assert_contains "$out" "  profile: --harness 'claude' --model 'fable'" "an unverifiable profile floor keeps the candidate in its declared place"
+assert_contains "$out" '  note: chosen candidate has disclosed quota uncertainty: profile floor model:fable is unverifiable' "the unverifiable profile floor is disclosed"
+assert_not_contains "$out" "  profile: --harness 'codex'" "the next candidate is not taken over an unverifiable profile floor"
 
 jq '.rules[0].use = [{"harness": "claude", "model": "fable", "floor": {"scope": "model:fable", "min_percent": 20}}, {"harness": "codex", "model": "gpt-5.6-sol", "floor": {"scope": "all_models", "min_percent": 50}}]' "$ORDERED_RULES" > "$RULES"
 reset_log

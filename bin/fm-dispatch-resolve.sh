@@ -34,7 +34,8 @@
 #   candidate is unmeasured, never blocked), and the spendPriority argmax over
 #   the eligible candidates, or, for a rule declaring `select: "ordered"`, the
 #   first eligible candidate in the rule's declared `use` order (a candidate
-#   with unmeasured quota stays eligible, with that uncertainty printed). The
+#   with unmeasured quota or an unverifiable profile floor stays eligible,
+#   with that uncertainty printed). The
 #   model never sees quota, catalogs, approvals,
 #   confidence floors, `why`, or `use`. With no rules, it returns a non-clear
 #   result so firstmate keeps using the existing intake.
@@ -524,7 +525,7 @@ RESULT=$(jq -n --arg floor "$CONFIDENCE_FLOOR" --argjson lat "$LAT_MS" --arg non
       ([$cands[] | select(.eligible)] | first) as $first |
       if $first == null then $ev + {status: "escalate", reason: "no eligible candidate in the declared order of the rule", note: $sel.note, candidates: $cands}
       else $ev + {status: "clear", note: "\($sel.note); ordered: first eligible in declared order", candidates: $cands, chosen: $first}
-        + (if ($first.unranked // false) then {unranked_note: "chosen candidate quota is unmeasured: \($first.reason)"} else {} end)
+        + (if ($first.unranked // false) then {unranked_note: "chosen candidate has disclosed quota uncertainty: \($first.reason)"} else {} end)
       end
     elif ($elig | length) == 0 then $ev + {status: "escalate", reason: "no rankable eligible candidate", note: $sel.note, candidates: $cands}
     else
