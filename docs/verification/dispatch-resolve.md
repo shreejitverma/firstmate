@@ -34,7 +34,7 @@ Briefs: 15 real briefs from this home's recent work plus 10 synthetic ones writt
 | API errors | 0 |
 
 Of the five disagreements, one was a wrong hand label (the brief quoted the bug-fix rule's wording verbatim), three were real briefs the model read as the approval-gated design rule at 0.66 to 0.86 confidence and escalated by design, each of which the captain had in fact dispatched at the strongest-reasoning class, and one was a synthetic tweak that came back ambiguous at 0.41 confidence and was handed back to firstmate.
-A lean request that asks only the rule Choice matched the full request (rule, profile, and status) on all 25 briefs, which is why the shipped tool asks one question and keeps every gate in code.
+A lean request that asks only the rule Choice matched the full request (rule, profile, and status) on all 25 briefs, which is why the shipped tool asks only the rule question (now once per option order, below) and keeps every gate in code.
 That table records the 2026-09-16 run with the captain-authored none option.
 A second live run on 2026-09-17 used the same 25 briefs, held one quota snapshot constant through a fake `quota-axi`, and exercised a copy of this branch with the shipped neutral `No listed rule applies to this task.` option and option-free interface.
 
@@ -98,6 +98,26 @@ The delivery mode is the same on most ship briefs and says nothing about difficu
 These live runs cover the scout line, the free-form whole-brief fallback, the ship-brief package, the top-tier floor turning the pick `ambiguous`, and the fallback to a runner-up.
 The remaining behavior is covered only by the offline tests below: a fenced heading inside a section, the boundaries of the global 0.6 confidence check with no declared floors, the probability-based floor examples, the tie case, and rejection of an out-of-range `min_confidence`.
 
+## Option order across Jev versions
+
+Run 2026-10-19 against `jev-1.13.0` and `jev-1.14.0` (then `jev-preview`), on a home's real six-rule file whose first rule is the strongest-reasoning tier.
+Twelve free-form briefs: two hardest-tier, two routine-feature or known-cause-fix, one dependency bump, one docs edit, one live-information scout, one whole-codebase audit scout, and four borderline (a large no-behavior-change file split, an unexplained slowdown, a retry policy, and a straightforward port with a signed installer).
+Each request asked the rule Choice twice in one call, options in file order and reversed, with identical instructions and option text.
+
+| Measure | `jev-1.13.0` | `jev-1.14.0` |
+| --- | --- | --- |
+| Clear-cut briefs at probability 0.99 or 1.0 in both orders | 8 of 8 | 8 of 8 |
+| Borderline briefs whose two orders differ by total variation above 0.1 | 2 of 4 | 1 of 4 |
+| Top pick changed by order | 0 of 12 | 0 of 12 |
+| Input tokens per two-order request | 1,427 to 1,475 | 1,427 to 1,475 |
+| API latency per request | 129 to 211 ms | 95 to 156 ms |
+
+Both drifting briefs moved probability toward the first-listed option, the strongest-reasoning tier.
+Five runs of each on `jev-1.13.0` reproduced the direction every time: the file split put 0.29 to 0.39 on the first-listed tier in file order against 0.13 to 0.21 reversed, and the port 0.16 to 0.22 against 0.06 to 0.09.
+In file order the file split's confidence ranged 0.52 to 0.64 across runs, straddling the 0.6 floor, so the same brief moved between passing and failing it; the reversed order stayed at 0.76 to 0.85.
+The two-order average removes the position term at a cost of about 550 extra input tokens and no added latency, because both questions share one state evaluation.
+`jev-1.14.0` answered the clear-cut briefs identically and still leaned on the file split, so the two-order average stays useful when the `jev-latest` alias the tool sends moves to it.
+
 ## Offline behavior
 
 `tests/fm-dispatch-resolve.test.sh` drives the public interface with a fake `curl` that records argv, the request body, the header read from file descriptor 3, and whether the secret reached its environment, plus a fake `quota-axi` that performs the same environment check.
@@ -106,9 +126,10 @@ It proves the absent key (environment and `.env`) prints one stderr line, nothin
 It proves absent, default-only, and empty-rules files return `no rules to match` without a model or quota request, while a broken rules-file symlink exits 2 as unreadable.
 It proves the documented starter configuration resolves its Pi default through the declared Claude provider, a `.env` key turns the tool on, and the environment wins over it.
 It proves the key is absent from child environments, never appears on `curl` argv, and arrives only as the bearer header on the descriptor.
-It proves the request uses the fixed endpoint and model, carries only the project, the brief's task sections read by the shared brief-heading parser with a scout line only for a scout brief and never a ship brief's delivery mode (or the whole brief when it has neither section), and rule Choice with one option per rule plus the fixed neutral none option, and never carries `why`, `use`, or quota.
+It proves the request uses the fixed endpoint and model, carries only the project, the brief's task sections read by the shared brief-heading parser with a scout line only for a scout brief and never a ship brief's delivery mode (or the whole brief when it has neither section), and the rule Choice in file order and reversed with one option per rule plus the fixed neutral none option, and never carries `why`, `use`, or quota.
+It proves agreeing orders keep their shared pick with averaged probabilities at the averaged confidence, disagreeing orders are `ambiguous` with a reason naming each order's pick and no profile, including a confident first-listed pick the reversed order rejects, and a response missing either order's answer is an `error`.
 It proves a declared `min_confidence` is checked against the rule's own probability both as the pick and as a runner-up, a picked rule below it falls to the most probable runner-up that clears its floor, is `ambiguous` when none does or two tie, and that a file without declared floors keeps the global 0.6 floor on confidence unchanged.
-It proves the clear, fixed-floor ambiguous with candidate evidence, escalate (approval with candidate evidence, unverifiable rule floor, tie, nothing rankable), known rule-floor fall-through, known and unverifiable profile-floor evidence, explicit-provider and provider-ID enforcement, authoritative Agy and explicit-provider Gemini routing, partial providers, eligible unranked candidates and their clear-result note, concrete quota vetoes and profile-floor shortfalls taking precedence over uncertainty, account-wide quota veto, limiting-bound ranking, schema-6 account-row binding with schema-5 compatibility, missing-curl and quota-axi failures, HTTP 429 and 500, transport failure, malformed usage, zero-mass or malformed probabilities or confidence, malformed or duplicate profile, invalid selector, removed-option rejection, and out-of-range rule ID paths behave as the contract states, with configuration errors exiting 2 before any network call.
+It proves the clear, fixed-floor ambiguous with candidate evidence, escalate (approval with candidate evidence, unverifiable rule floor, tie, nothing rankable), known rule-floor fall-through, known and unverifiable profile-floor evidence, explicit-provider and provider-ID enforcement, authoritative Agy and explicit-provider Gemini routing, partial providers, eligible unranked candidates and their clear-result note, concrete quota vetoes and profile-floor shortfalls taking precedence over uncertainty, account-wide quota veto, limiting-bound ranking, schema-6 account-row binding with schema-5 compatibility, missing-curl and quota-axi failures, HTTP 429 and 500, transport failure, malformed usage, zero-mass or malformed probabilities or confidence, malformed or duplicate profile, invalid selector, removed-option rejection, and out-of-range rule ID paths from either order behave as the contract states, with configuration errors exiting 2 before any network call.
 `tests/fm-bootstrap.test.sh` proves bootstrap ignores resolver-only fields without the typed key, accepts a verified `gemini` profile with or without the key, rejects an unknown harness without the key, validates each malformed shape when the environment or home `.env` activates typed resolution, and prevents an environment-provided key from reaching child processes.
 
 ```console
