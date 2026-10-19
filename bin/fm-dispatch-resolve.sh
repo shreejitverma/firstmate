@@ -20,10 +20,10 @@
 #   ONE rule Choice whose options are every rule's `when` from
 #   config/crew-dispatch.json plus one fixed generic none option, asked twice
 #   in the same request: once in file order and once in reverse order. Jev
-#   leans toward the option listed first, so the tool averages the two
-#   answers' per-option probabilities and confidences and takes the most
-#   probable option as the matched rule; an exact tie at the top is
-#   ambiguous. Everything after that is jq: the confidence floor (0.6 on the answer confidence, or a
+#   leans toward the option listed first, so when both orders pick the same
+#   option the tool keeps it as the matched rule with the two answers'
+#   per-option probabilities and confidences averaged; when they pick
+#   different options the result is ambiguous. Everything after that is jq: the confidence floor (0.6 on the answer confidence, or a
 #   rule's declared `min_confidence` on that rule's probability, falling to the
 #   most probable other option that clears its own floor), the rule's declared
 #   `approval` and `floor`, each profile's declared `provider` and `floor`, the
@@ -58,7 +58,7 @@
 #     candidate: <harness>:<model> provider=.. scope=.. remaining=..% spendPriority=.. runway=.. -> eligible | eligible, unranked: <reason> | not eligible: <reason>
 #     profile: --harness <h> [--model <m>] [--effort <e>]     (status clear only)
 #   clear     -> pass the profile line to fm-spawn.sh unless you state a reason to override
-#   ambiguous -> confidence below the floor, or an averaged tie; decide as today from the probabilities
+#   ambiguous -> confidence below the floor, or the two option orders disagree; decide as today from the probabilities
 #   escalate  -> the rule requires captain approval, no candidate is rankable, or a genuine tie
 #   error     -> API, network, response, or quota-axi failure; decide as today
 #   Every outcome exits 0 so an intake is never blocked by this tool.
@@ -356,7 +356,7 @@ jq -e --slurpfile rules "$RULES" '
 # Averaging the per-option probabilities cancels the first-listed lean, and the
 # averaged confidence meets the same floors a single answer did. When the two
 # orders pick the same option it stays the pick; when they disagree the most
-# probable averaged option is the pick, and an exact tie at the top is ambiguous.
+# probable averaged option is shown and the result is ambiguous.
 ORDER_AVG=$(jq '
   .answers.rule as $f | .answers.rule_reversed as $v |
   def avg($a; $b): ((($a + $b) / 2) * 10000 | round) / 10000;
@@ -366,7 +366,7 @@ ORDER_AVG=$(jq '
   .order = {
     forward: {choice: $f.choice, confidence: $f.confidence},
     reversed: {choice: $v.choice, confidence: $v.confidence},
-    tie: (($agree | not) and $ranked[0].value == $ranked[1].value)
+    agree: $agree
   } |
   .answers = {rule: {type: "choice", choice: (if $agree then $f.choice else $ranked[0].key end),
                      probabilities: $p, confidence: avg($f.confidence; $v.confidence)}}' "$RESP_FILE") \
@@ -465,7 +465,8 @@ RESULT=$(jq -n --arg floor "$CONFIDENCE_FLOOR" --argjson lat "$LAT_MS" --arg non
   # than it would as the pick. Only a rule that declares its own floor falls
   # through to a runner-up, so a file with no declared floors keeps the single
   # global floor on the answer confidence exactly.
-  (if declared_confidence($picked) | not then
+  (if ($r.order.agree | not) then {disagree: true}
+   elif declared_confidence($picked) | not then
      (if $a.confidence >= $picked_floor then {below: false} else {below: true, global: true} end)
    elif $a.probabilities[$picked] >= $picked_floor then {below: false}
    else
@@ -500,8 +501,8 @@ RESULT=$(jq -n --arg floor "$CONFIDENCE_FLOOR" --argjson lat "$LAT_MS" --arg non
   + (if $fb.to then {fallback: "\($choice) (\(when_of($choice))) probability \($fb.p) clears its floor \($fb.to_floor); \($picked) probability \($a.probabilities[$picked]) is below its floor \($picked_floor)"} else {} end)
   as $ev |
   if $sel.invalid then $ev + {status: "error", reason: $sel.invalid}
-  elif $r.order.tie then
-    $ev + {status: "ambiguous", reason: "the two option orders average to a tie at the top", candidates: ($answer_use | map(evaluate(.)))}
+  elif $fb.disagree then
+    $ev + {status: "ambiguous", reason: "the two option orders disagree: forward \($r.order.forward.choice), reversed \($r.order.reversed.choice)", candidates: ($answer_use | map(evaluate(.)))}
   elif $fb.below and $fb.global then
     $ev + {status: "ambiguous", reason: "confidence \($a.confidence) below floor \($floor)", candidates: ($answer_use | map(evaluate(.)))}
   elif $fb.below and ($fb.to | not) then

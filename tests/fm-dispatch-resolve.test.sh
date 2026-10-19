@@ -452,28 +452,29 @@ JSON
 reset_log
 write_order_response "$RESPONSE" rule_1 0.5 "0.55 0 0 0.45 0" rule_4 0.9 "0.05 0 0 0.95 0"
 TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
-assert_contains "$out" '  status: clear' "an order disagreement resolves on the averaged answer"
-assert_contains "$out" '  rule: rule_4 (A simple bug fix with a stated root cause.)   confidence: 0.7' "the most probable averaged option is the pick, with the averaged confidence"
+assert_contains "$out" '  status: ambiguous' "an order disagreement is never clear"
+assert_contains "$out" '  reason: the two option orders disagree: forward rule_1, reversed rule_4' "the disagreement names each order's pick"
 assert_contains "$out" '  probabilities: rule_1=0.3 rule_2=0 rule_3=0 rule_4=0.7 default=0' "the printed probabilities are the per-option averages"
 assert_contains "$out" '  order: forward=rule_1@0.5 reversed=rule_4@0.9 (averaged)' "each order's own pick and confidence stay inspectable"
-assert_contains "$out" "  profile: --harness 'cursor' --model 'cursor-grok-4.6-medium'" "the averaged rule's profiles are resolved"
+assert_not_contains "$out" '  profile:' "an order disagreement emits no profile line"
+reset_log
+write_order_response "$RESPONSE" rule_1 0.9 "0.9 0 0.08 0 0.02" rule_3 0.85 "0.13 0 0.85 0 0.02"
+TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
+assert_contains "$out" '  status: ambiguous' "a first-listed pick the reversed order rejects is never clear"
+assert_contains "$out" '  reason: the two option orders disagree: forward rule_1, reversed rule_3' "the first-listed lean is named as a disagreement"
+assert_not_contains "$out" '  profile:' "a confident forward pick alone emits no profile line"
 reset_log
 write_order_response "$RESPONSE" rule_4 0.9 "0.05 0 0 0.95 0" rule_4 0.5 "0.45 0 0 0.55 0"
 TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
 assert_contains "$out" '  rule: rule_4 (A simple bug fix with a stated root cause.)   confidence: 0.7' "agreeing orders keep their shared pick at the averaged confidence"
 assert_contains "$out" '  status: clear' "an averaged confidence above the floor is clear"
-reset_log
-write_order_response "$RESPONSE" rule_1 0.7 "0.7 0 0 0.3 0" rule_4 0.7 "0.3 0 0 0.7 0"
-TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
-assert_contains "$out" '  status: ambiguous' "disagreeing orders that average to a tie are ambiguous"
-assert_contains "$out" '  reason: the two option orders average to a tie at the top' "the tie is named"
-assert_not_contains "$out" '  profile:' "an averaged tie emits no profile line"
+assert_contains "$out" "  profile: --harness 'cursor' --model 'cursor-grok-4.6-medium'" "the agreed rule's profiles are resolved"
 reset_log
 write_response "$RESPONSE" rule_4 0.9
 TYPESAFE_API_KEY=$KEY FAKE_CURL_NO_MIRROR=1 run code out err "$BRIEF"
 assert_contains "$out" '  status: error' "a response missing the reversed-order answer is an error outcome"
 assert_contains "$out" '  reason: response is not a pair of rule Choice answers' "both order answers are required"
-pass "option-order average: disagreement, agreement, tie, and a missing order answer"
+pass "option-order average: disagreement, agreement, and a missing order answer"
 
 # --- ambiguous: fixed confidence floor -----------------------------------------
 reset_log
