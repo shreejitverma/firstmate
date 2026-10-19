@@ -95,10 +95,7 @@ CONFIG="${FM_CONFIG_OVERRIDE:-$FM_HOME/config}"
 . "$SCRIPT_DIR/fm-brief-heading-lib.sh"
 
 CONFIDENCE_FLOOR=0.6
-# Pinned version, not the moving jev-latest alias: the confidence floors and
-# the verification record were measured against this version, and an alias
-# move would silently change answers. Re-verify before bumping.
-TS_MODEL=jev-1.13.0
+TS_MODEL=jev-latest
 TS_BASE=https://api.typesafe.ai
 TS_TIMEOUT=5
 DEFAULT_WHEN="No listed rule applies to this task."

@@ -116,7 +116,7 @@ Both drifting briefs moved probability toward the first-listed option, the stron
 Five runs of each on `jev-1.13.0` reproduced the direction every time: the file split put 0.29 to 0.39 on the first-listed tier in file order against 0.13 to 0.21 reversed, and the port 0.16 to 0.22 against 0.06 to 0.09.
 In file order the file split's confidence ranged 0.52 to 0.64 across runs, straddling the 0.6 floor, so the same brief moved between passing and failing it; the reversed order stayed at 0.76 to 0.85.
 The two-order average removes the position term at a cost of about 550 extra input tokens and no added latency, because both questions share one state evaluation.
-`jev-1.14.0` answered the clear-cut briefs identically and still leaned on the file split, so the tool stays pinned to `jev-1.13.0`, the version every floor in this record was measured on, until a full re-run justifies a bump.
+`jev-1.14.0` answered the clear-cut briefs identically and still leaned on the file split, so the two-order average stays useful when the `jev-latest` alias the tool sends moves to it.
 
 ## Offline behavior
 

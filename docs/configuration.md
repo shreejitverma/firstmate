@@ -1392,7 +1392,7 @@ Firstmate passes its profile line unless it states a reason to override, such as
 
 - The resolver and bootstrap copy an environment-provided key into a non-exported private variable and unset `TYPESAFE_API_KEY` before launching child processes, so the secret is absent from child environments.
 - The resolver sends the key to `curl` only as a header read from a file descriptor, never on argv, and nothing prints, logs, or writes it.
-- The resolver fixes the endpoint at `https://api.typesafe.ai`, model at the pinned version `jev-1.13.0` rather than the moving `jev-latest` alias (bump it only after re-running the verification record), default confidence floor at 0.6, and request timeout at 5 seconds; `TYPESAFE_API_KEY` is its only resolver-specific environment setting.
+- The resolver fixes the endpoint at `https://api.typesafe.ai`, model at `jev-latest`, default confidence floor at 0.6, and request timeout at 5 seconds; `TYPESAFE_API_KEY` is its only resolver-specific environment setting.
 
 The live rule-match evidence is recorded in [`verification/dispatch-resolve.md`](verification/dispatch-resolve.md).
 

@@ -241,7 +241,7 @@ assert_contains "$argv" '@/dev/fd/3' "the header is read from a file descriptor"
 assert_equals "Authorization: Bearer $KEY" "$(cat "$LOG/header")" "curl receives the bearer header on fd 3"
 assert_equals $'curl:clean\nquota-axi:clean' "$(cat "$LOG/child-env")" "the API key is absent from every child environment"
 body=$(cat "$LOG/body")
-assert_equals 'jev-1.13.0' "$(jq -r .model <<<"$body")" "the model is the pinned verified version, not a moving alias"
+assert_equals 'jev-latest' "$(jq -r .model <<<"$body")" "default model is jev-latest"
 assert_equals 'pager' "$(jq -r .state.task.project <<<"$body")" "project rides in the state"
 assert_contains "$(jq -r .state.task.brief <<<"$body")" 'off-by-one in the pager' "a brief without task headings rides whole in the state"
 assert_equals '["rule","rule_reversed"]' "$(jq -c '.questions | keys' <<<"$body")" "only the rule Choice is asked, once per option order"
