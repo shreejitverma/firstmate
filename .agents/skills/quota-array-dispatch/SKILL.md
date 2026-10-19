@@ -127,6 +127,7 @@ Do not read `aheadWindowIds`, `behindWindowIds`, `onPaceWindowIds`, `limitingWin
 
 Genuine ties: stop and report every tied candidate for captain choice.
 Do not select by array order, harness name, or another arbitrary identity ordering.
+The one exception is a matched rule that declares `select: "ordered"`: there the declared `use` order is the captain's own fallback chain, so take the first candidate that passes the eligibility gates, keep a candidate with unmeasured quota eligible in its place with that uncertainty disclosed (an unverifiable profile floor counts as unmeasured quota there, unlike a rule-level floor, which escalates), never reorder by `spendPriority`, and stop and report when none is eligible.
 Report duplicate concrete profiles as a configuration error.
 
 Account for every candidate visibly before selecting or escalating, naming its catalog evidence, provider relation, applicable quota and authentication facts, remaining uncertainty, fit and reasoning class, `spendPriority`, and runway-versus-horizon result.

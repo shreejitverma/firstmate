@@ -1008,6 +1008,51 @@ TYPESAFE_API_KEY=$KEY FAKE_CURL_HTTP=500 run code out err "$BRIEF"
 assert_contains "$out" '  status: error' "http 500 is a TOON error outcome"
 pass "API, transport, and response failures are error outcomes with exit 0"
 
+# --- select: ordered takes the first eligible candidate in declared order -------
+ORDERED_RULES="$TMP_ROOT/ordered-rules.json"
+jq '.rules[0] = {"when": "New feature work on the app.", "select": "ordered", "use": [
+  {"harness": "claude", "model": "fable", "effort": "xhigh", "floor": {"scope": "model:fable", "min_percent": 20}},
+  {"harness": "codex", "model": "gpt-5.6-sol"},
+  {"harness": "cursor", "model": "cursor-grok-4.6-high"}]}' "$BASE_RULES" > "$ORDERED_RULES"
+cp "$ORDERED_RULES" "$RULES"
+reset_log
+write_response "$RESPONSE" rule_1 0.97
+TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
+assert_contains "$out" '  status: clear' "an ordered rule resolves"
+assert_contains "$out" 'candidate: claude:fable  provider=claude  scope=model:fable  remaining=15%' "the first-listed candidate is evaluated first"
+assert_contains "$out" 'not eligible: profile floor model:fable below 20%' "a candidate below its profile floor is skipped"
+assert_contains "$out" "  profile: --harness 'codex' --model 'gpt-5.6-sol'" "the next eligible candidate in declared order wins over a higher spendPriority"
+assert_contains "$out" '  note: rule matched; ordered: first eligible in declared order' "the ordered selection is stated"
+assert_not_contains "$out" "  profile: --harness 'cursor'" "spendPriority never reorders an ordered rule"
+
+jq '.rules[0].use = [{"harness": "kimi", "model": "kimi-code/k3"}, {"harness": "cursor", "model": "cursor-grok-4.6-high"}]' "$ORDERED_RULES" > "$RULES"
+reset_log
+TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
+assert_contains "$out" "  profile: --harness 'kimi' --model 'kimi-code/k3'" "an eligible first candidate with unmeasured quota keeps its declared place"
+assert_contains "$out" '  note: chosen candidate has disclosed quota uncertainty: provider kimi unmeasured (unknown)' "the chosen candidate's quota uncertainty is disclosed"
+
+jq '.rules[0].use = [{"harness": "claude", "model": "fable", "floor": {"scope": "model:fable", "min_percent": 10}}, {"harness": "codex", "model": "gpt-5.6-sol"}]' "$ORDERED_RULES" > "$RULES"
+reset_log
+TYPESAFE_API_KEY=$KEY QUOTA_AXI_FIXTURE="$MISSING_RULE_FLOOR" run code out err "$BRIEF"
+assert_contains "$out" '  status: clear' "an ordered first candidate with an unverifiable profile floor still resolves"
+assert_contains "$out" "  profile: --harness 'claude' --model 'fable'" "an unverifiable profile floor keeps the candidate in its declared place"
+assert_contains "$out" '  note: chosen candidate has disclosed quota uncertainty: profile floor model:fable is unverifiable' "the unverifiable profile floor is disclosed"
+assert_not_contains "$out" "  profile: --harness 'codex'" "the next candidate is not taken over an unverifiable profile floor"
+
+jq '.rules[0].use = [{"harness": "claude", "model": "fable", "floor": {"scope": "model:fable", "min_percent": 20}}, {"harness": "codex", "model": "gpt-5.6-sol", "floor": {"scope": "all_models", "min_percent": 50}}]' "$ORDERED_RULES" > "$RULES"
+reset_log
+TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
+assert_contains "$out" '  status: escalate' "an ordered rule with no eligible candidate escalates"
+assert_contains "$out" '  reason: no eligible candidate in the declared order of the rule' "the empty ordered result is named"
+assert_not_contains "$out" '  profile:' "an ordered rule with no eligible candidate emits no profile"
+
+jq '.rules[0].select = "first-come"' "$ORDERED_RULES" > "$RULES"
+TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
+expect_code 2 "$code" "an unknown select value exits 2"
+assert_contains "$err" 'unknown select: first-come' "the unknown select value is named"
+cp "$BASE_RULES" "$RULES"
+pass "select: ordered takes the first eligible candidate and never ranks by spendPriority"
+
 # --- configuration errors exit 2 and select nothing ----------------------------------
 reset_log
 TYPESAFE_API_KEY=$KEY run code out err

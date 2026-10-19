@@ -1213,6 +1213,7 @@ This section is the single owner of the canonical schema and its per-field seman
 | `use` and optional top-level `default` | Accept one profile object or a non-empty array of profile objects; the single-object form remains fully backward-compatible. |
 | Profile `harness` | Required in every profile. |
 | Profile `model` and `effort`; rule `why` | Optional. |
+| Rule `select` | Optional; how a matched array `use` chooses one profile. `quota-balanced` (the default when absent) ranks eligible candidates by `spendPriority` under `quota-array-dispatch`; `ordered` takes the first eligible candidate in the declared `use` order and never reorders by `spendPriority`, for a captain-fixed fallback chain. |
 
 **Fields applied only by typed resolution**
 
@@ -1342,7 +1343,7 @@ After the answer, code applies all remaining checks and ranking:
 - The confidence floor and the matched rule's `approval` and `floor`.
 - Each candidate's `provider` and `floor`.
 - Every applicable account-wide and model/product row from one `quota-axi --json` snapshot.
-- The numeric `spendPriority` argmax over candidates, using each candidate's limiting row.
+- The numeric `spendPriority` argmax over candidates, using each candidate's limiting row, or, for a rule declaring `select: "ordered"`, the first eligible candidate in declared order.
 
 The [shared quota library](../bin/fm-quota-axi-lib.sh) accepts schema 5 and schema 6 and implements the [account-matching contract](../.agents/skills/quota-array-dispatch/SKILL.md#1-eligibility).
 
@@ -1363,6 +1364,8 @@ No qualifying option, or two equally probable qualifying options, produces `ambi
 
 **Candidate eligibility and evidence**
 
+- A matched rule declaring `select: "ordered"` resolves to the first eligible candidate in its declared `use` order, prints that it did so, and escalates when no candidate is eligible; a candidate with unmeasured quota stays eligible in its place, with the uncertainty printed beside the profile.
+  An unverifiable profile floor (no known row for its scope) also counts as unmeasured quota and keeps the candidate in its place, unlike a rule-level floor, which escalates when unverifiable.
 - Any applicable `exhausted_now` row or known zero bound makes that candidate ineligible, and a known profile-floor shortfall does the same before unrelated quota uncertainty is considered.
 - Missing or nonnumeric `spendPriority` evidence is never ranked, and every candidate is printed beside its evidence or the reason it was not rankable, including on ambiguous and approval-gated outcomes that emit no profile.
 - On the opted-in path, duplicate concrete profiles with the same harness, model, and effort inside one rule or the default array are configuration errors rather than ties.
@@ -1373,7 +1376,7 @@ No qualifying option, or two equally probable qualifying options, produces `ambi
 | --- | --- |
 | `clear` | A `profile:` line ready for `fm-spawn.sh`. |
 | `ambiguous` | The two option orders picked different options, or confidence is below the floor with no runner-up taken. |
-| `escalate` | An approval-gated rule, unverifiable rule floor, nothing rankable, or a genuine tie. |
+| `escalate` | An approval-gated rule, unverifiable rule floor, nothing rankable (for an `ordered` rule, nothing eligible), or a genuine tie. |
 | `error` | API, network, malformed response metadata, rendering, or quota-axi failure. |
 
 Every result above exits 0.
