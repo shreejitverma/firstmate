@@ -23,8 +23,8 @@
 #   leans toward the option listed first, so when both orders pick the same
 #   option the tool keeps it as the matched rule with the two answers'
 #   per-option probabilities and confidences averaged; when they pick
-#   different options the result is ambiguous. Everything after that is jq: the confidence floor (0.6 on the answer confidence, or a
-#   rule's declared `min_confidence` on that rule's probability, falling to the
+#   different options the result is ambiguous. Everything after that is jq:
+#   the confidence floor (0.6 on the answer confidence, or a rule's declared `min_confidence` on that rule's probability, falling to the
 #   most probable other option that clears its own floor), the rule's declared
 #   `approval` and `floor`, each profile's declared `provider` and `floor`, the
 #   quota rows from ONE quota-axi --json snapshot (schema 5 or 6; each
@@ -32,7 +32,10 @@
 #   bin/fm-quota-axi-lib.sh, so a Pi lane such as openai-codex-work/...
 #   reads its own account's row and an expanded provider with no row for the
 #   candidate is unmeasured, never blocked), and the spendPriority argmax over
-#   the eligible candidates. The model never sees quota, catalogs, approvals,
+#   the eligible candidates, or, for a rule declaring `select: "ordered"`, the
+#   first eligible candidate in the rule's declared `use` order (a candidate
+#   with unmeasured quota stays eligible, with that uncertainty printed). The
+#   model never sees quota, catalogs, approvals,
 #   confidence floors, `why`, or `use`. With no rules, it returns a non-clear
 #   result so firstmate keeps using the existing intake.
 #   docs/configuration.md "Crew dispatch profiles" owns the declared fields and
@@ -188,8 +191,8 @@ rules_err=$(jq -r --argjson verified_harnesses "$VERIFIED_HARNESSES" --arg provi
   elif any((.rules // [])[]; has("approval") and .approval != "captain") then "approval must be \"captain\" when present"
   elif any((.rules // [])[]; has("min_confidence") and ((.min_confidence | type) != "number" or .min_confidence < 0 or .min_confidence > 1)) then "min_confidence must be a number from 0 through 1 when present"
   elif any((.rules // [])[]; has("select") and ((.select | type) != "string" or (.select | length) == 0)) then "select must be a non-empty string"
-  elif any((.rules // [])[]; has("select") and .select != "quota-balanced") then
-    "unknown select: " + ([.rules[] | select(has("select") and .select != "quota-balanced") | .select] | unique | join(", "))
+  elif any((.rules // [])[]; has("select") and (.select | IN("quota-balanced", "ordered") | not)) then
+    "unknown select: " + ([.rules[] | select(has("select") and (.select | IN("quota-balanced", "ordered") | not)) | .select] | unique | join(", "))
   elif any((.rules // [])[]; has("floor") and floor_bad(.floor; true)) then "rule floor needs scope, min_percent 0..100, and provider matching ^[a-z0-9]+(-[a-z0-9]+)*\\z"
   elif any((.rules // [])[] | profiles(.use)[]; profile_bad(.)) then "each use profile needs harness; model, effort, and floor must be well formed, and provider must match ^[a-z0-9]+(-[a-z0-9]+)*\\z when present"
   elif any((.rules // [])[]; duplicate_profiles(profiles(.use))) then "each rule use must not contain duplicate harness, model, and effort profiles"
@@ -490,7 +493,7 @@ RESULT=$(jq -n --arg floor "$CONFIDENCE_FLOOR" --argjson lat "$LAT_MS" --arg non
    elif $rule_floor_state == "unknown" then {source: $choice, escalate: "rule \($choice) floor \($rule.floor.provider)/\($rule.floor.scope) is unverifiable"}
    elif $rule_floor_state == "below"
      then {source: "default", use: profiles($cfg.default // null), note: "rule \($choice) floor \($rule.floor.scope) below \($rule.floor.min_percent)%: fall through to default"}
-   else {source: $choice, use: profiles($rule.use), note: "rule matched"} end) as $sel |
+   else {source: $choice, use: profiles($rule.use), note: "rule matched", ordered: (($rule.select // "") == "ordered")} end) as $sel |
   def when_of($c): (if rule_at($c) == null then $none_criterion else rule_at($c).when end | .[0:60]);
   {
     model: $r.model, latency_ms: $lat, tokens: ($r.usage // null),
@@ -515,7 +518,15 @@ RESULT=$(jq -n --arg floor "$CONFIDENCE_FLOOR" --argjson lat "$LAT_MS" --arg non
     ($sel.use | map(evaluate(.))) as $cands |
     ([$cands[] | select(.eligible and ((.unranked // false) | not))]) as $elig |
     ([$cands[] | select(.unranked)]) as $unranked |
-    if ($elig | length) == 0 then $ev + {status: "escalate", reason: "no rankable eligible candidate", note: $sel.note, candidates: $cands}
+    if $sel.ordered then
+      # Declared order is the captain preference: the first eligible
+      # candidate wins and spendPriority never reorders it.
+      ([$cands[] | select(.eligible)] | first) as $first |
+      if $first == null then $ev + {status: "escalate", reason: "no eligible candidate in the declared order of the rule", note: $sel.note, candidates: $cands}
+      else $ev + {status: "clear", note: "\($sel.note); ordered: first eligible in declared order", candidates: $cands, chosen: $first}
+        + (if ($first.unranked // false) then {unranked_note: "chosen candidate quota is unmeasured: \($first.reason)"} else {} end)
+      end
+    elif ($elig | length) == 0 then $ev + {status: "escalate", reason: "no rankable eligible candidate", note: $sel.note, candidates: $cands}
     else
       ($elig | max_by(.spendPriority)) as $best |
       ([$elig[] | select(.spendPriority == $best.spendPriority)] | length) as $ties |
