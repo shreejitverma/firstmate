@@ -17,10 +17,13 @@
 #   https://api.typesafe.ai/v1/systemone with the project name and the brief's
 #   `## Captain's intent` and `## Firstmate spec` sections, tagged when it is a
 #   scout brief (the whole brief when it has neither section), as state and
-#   ONE Choice question whose options are every rule's `when` from
-#   config/crew-dispatch.json plus one fixed generic none option. Jev returns
-#   the matched rule, a probability per option, and a confidence. Everything
-#   after that is jq: the confidence floor (0.6 on the answer confidence, or a
+#   ONE rule Choice whose options are every rule's `when` from
+#   config/crew-dispatch.json plus one fixed generic none option, asked twice
+#   in the same request: once in file order and once in reverse order. Jev
+#   leans toward the option listed first, so the tool averages the two
+#   answers' per-option probabilities and confidences and takes the most
+#   probable option as the matched rule; an exact tie at the top is
+#   ambiguous. Everything after that is jq: the confidence floor (0.6 on the answer confidence, or a
 #   rule's declared `min_confidence` on that rule's probability, falling to the
 #   most probable other option that clears its own floor), the rule's declared
 #   `approval` and `floor`, each profile's declared `provider` and `floor`, the
@@ -49,12 +52,13 @@
 #   dispatch-resolve:
 #     status: clear | ambiguous | escalate | error
 #     model/latency_ms/tokens, rule (when excerpt) and confidence, probabilities
+#     order: each option order's own pick and confidence (the rule is their average)
 #     fallback: <runner-up rule taken when the picked rule missed its own floor>
 #     reason: <why the status is not clear>
 #     candidate: <harness>:<model> provider=.. scope=.. remaining=..% spendPriority=.. runway=.. -> eligible | eligible, unranked: <reason> | not eligible: <reason>
 #     profile: --harness <h> [--model <m>] [--effort <e>]     (status clear only)
 #   clear     -> pass the profile line to fm-spawn.sh unless you state a reason to override
-#   ambiguous -> confidence below the floor; decide as today from the probabilities
+#   ambiguous -> confidence below the floor, or an averaged tie; decide as today from the probabilities
 #   escalate  -> the rule requires captain approval, no candidate is rankable, or a genuine tie
 #   error     -> API, network, response, or quota-axi failure; decide as today
 #   Every outcome exits 0 so an intake is never blocked by this tool.
@@ -91,7 +95,10 @@ CONFIG="${FM_CONFIG_OVERRIDE:-$FM_HOME/config}"
 . "$SCRIPT_DIR/fm-brief-heading-lib.sh"
 
 CONFIDENCE_FLOOR=0.6
-TS_MODEL=jev-latest
+# Pinned version, not the moving jev-latest alias: the confidence floors and
+# the verification record were measured against this version, and an alias
+# move would silently change answers. Re-verify before bumping.
+TS_MODEL=jev-1.13.0
 TS_BASE=https://api.typesafe.ai
 TS_TIMEOUT=5
 DEFAULT_WHEN="No listed rule applies to this task."
@@ -309,16 +316,15 @@ command -v curl >/dev/null 2>&1 || emit_error "curl not installed"
   REQUEST=$(jq -n --rawfile brief "$TASK_TEXT" --arg project "$PROJECT" --arg model "$TS_MODEL" \
     --arg none_criterion "$DEFAULT_WHEN" --slurpfile rules "$RULES" '
     ($rules[0]) as $cfg |
-    ($cfg.rules | to_entries | map({key: ("rule_" + ((.key + 1) | tostring)), value: .value.when}) | from_entries) as $criteria |
+    ($cfg.rules | to_entries | map({key: ("rule_" + ((.key + 1) | tostring)), value: .value.when}) | from_entries
+      + {default: $none_criterion}) as $criteria |
+    "Which ONE dispatch rule best fits `task` (read `task.brief` and `task.project`)? Each option is the rule'"'"'s own matching condition; pick `default` when no rule'"'"'s condition is met, including when a rule'"'"'s own exemption text excludes this task." as $instructions |
     {
       model: $model,
       state: {task: {project: $project, brief: $brief}},
       questions: {
-        rule: {
-          type: "choice",
-          instructions: "Which ONE dispatch rule best fits `task` (read `task.brief` and `task.project`)? Each option is the rule'"'"'s own matching condition; pick `default` when no rule'"'"'s condition is met, including when a rule'"'"'s own exemption text excludes this task.",
-          criteria: ($criteria + {default: $none_criterion})
-        }
+        rule: {type: "choice", instructions: $instructions, criteria: $criteria},
+        rule_reversed: {type: "choice", instructions: $instructions, criteria: ($criteria | to_entries | reverse | from_entries)}
       }
     }')
   never_send_check
@@ -332,18 +338,43 @@ command -v curl >/dev/null 2>&1 || emit_error "curl not installed"
   [ "$HTTP" = 200 ] || emit_error "http $HTTP after ${LAT_MS} ms: $(head -c 200 "$RESP_FILE" 2>/dev/null | tr '\n' ' ')"
 jq -e --slurpfile rules "$RULES" '
     (($rules[0].rules | to_entries | map("rule_" + ((.key + 1) | tostring))) + ["default"] | sort) as $choices |
-    (.answers.rule.choice | type) == "string" and
-    (.answers.rule.confidence | type) == "number" and
-    .answers.rule.confidence >= 0 and .answers.rule.confidence <= 1 and
-    (.answers.rule.probabilities | type) == "object" and
-    ((.answers.rule.probabilities | keys | sort) == $choices) and
-    all(.answers.rule.probabilities[]; type == "number" and . >= 0 and . <= 1) and
-    ((.answers.rule.probabilities | [.[]] | add) as $total | $total >= 0.99 and $total <= 1.01) and
+    def choice_answer:
+      type == "object" and
+      (.choice | type) == "string" and
+      (.confidence | type) == "number" and
+      .confidence >= 0 and .confidence <= 1 and
+      (.probabilities | type) == "object" and
+      ((.probabilities | keys | sort) == $choices) and
+      all(.probabilities[]; type == "number" and . >= 0 and . <= 1) and
+      ((.probabilities | [.[]] | add) as $total | $total >= 0.99 and $total <= 1.01);
+    (.answers.rule | choice_answer) and
+    (.answers.rule_reversed | choice_answer) and
     ((has("usage") | not) or
       ((.usage | type) == "object" and
        (.usage.input_tokens | type) == "number" and
        (.usage.output_tokens | type) == "number"))' \
-  "$RESP_FILE" >/dev/null 2>&1 || emit_error "response is not a rule Choice answer"
+  "$RESP_FILE" >/dev/null 2>&1 || emit_error "response is not a pair of rule Choice answers"
+
+# ---- option-order average: one rule answer from both orders ---------------------
+# Averaging the per-option probabilities cancels the first-listed lean, and the
+# averaged confidence meets the same floors a single answer did. When the two
+# orders pick the same option it stays the pick; when they disagree the most
+# probable averaged option is the pick, and an exact tie at the top is ambiguous.
+ORDER_AVG=$(jq '
+  .answers.rule as $f | .answers.rule_reversed as $v |
+  def avg($a; $b): ((($a + $b) / 2) * 10000 | round) / 10000;
+  ($f.probabilities | with_entries(.value = avg(.value; $v.probabilities[.key]))) as $p |
+  ([$p | to_entries[]] | sort_by(-.value)) as $ranked |
+  ($f.choice == $v.choice) as $agree |
+  .order = {
+    forward: {choice: $f.choice, confidence: $f.confidence},
+    reversed: {choice: $v.choice, confidence: $v.confidence},
+    tie: (($agree | not) and $ranked[0].value == $ranked[1].value)
+  } |
+  .answers = {rule: {type: "choice", choice: (if $agree then $f.choice else $ranked[0].key end),
+                     probabilities: $p, confidence: avg($f.confidence; $v.confidence)}}' "$RESP_FILE") \
+  || emit_error "option-order average failed"
+printf '%s\n' "$ORDER_AVG" > "$RESP_FILE" || emit_error "option-order average failed"
 
 # ---- quota evidence: one quota-axi --json snapshot -----------------------------
 command -v quota-axi >/dev/null 2>&1 || emit_error "quota-axi not installed"
@@ -466,11 +497,14 @@ RESULT=$(jq -n --arg floor "$CONFIDENCE_FLOOR" --argjson lat "$LAT_MS" --arg non
     model: $r.model, latency_ms: $lat, tokens: ($r.usage // null),
     rule: $picked,
     rule_when: when_of($picked),
-    confidence: $a.confidence, probabilities: $a.probabilities
+    confidence: $a.confidence, probabilities: $a.probabilities,
+    order: $r.order
   }
   + (if $fb.to then {fallback: "\($choice) (\(when_of($choice))) probability \($fb.p) clears its floor \($fb.to_floor); \($picked) probability \($a.probabilities[$picked]) is below its floor \($picked_floor)"} else {} end)
   as $ev |
   if $sel.invalid then $ev + {status: "error", reason: $sel.invalid}
+  elif $r.order.tie then
+    $ev + {status: "ambiguous", reason: "the two option orders average to a tie at the top", candidates: ($answer_use | map(evaluate(.)))}
   elif $fb.below and $fb.global then
     $ev + {status: "ambiguous", reason: "confidence \($a.confidence) below floor \($floor)", candidates: ($answer_use | map(evaluate(.)))}
   elif $fb.below and ($fb.to | not) then
@@ -504,6 +538,7 @@ TEXT=$(jq -r '
   "  model: \(show(.model))   latency_ms: \(show(.latency_ms))   tokens: \(show(.tokens.input_tokens))/\(show(.tokens.output_tokens))",
   "  rule: \(.rule | flat) (\(.rule_when | flat))   confidence: \(.confidence | flat)",
   "  probabilities: \([.probabilities | to_entries[] | "\(.key | flat)=\(.value | flat)"] | join(" "))",
+  (if .order then "  order: forward=\(.order.forward.choice | flat)@\(.order.forward.confidence | flat) reversed=\(.order.reversed.choice | flat)@\(.order.reversed.confidence | flat) (averaged)" else empty end),
   (if .fallback then "  fallback: \(.fallback | flat)" else empty end),
   (if .reason then "  reason: \(.reason | flat)" else empty end),
   (if .note then "  note: \(.note | flat)" else empty end),

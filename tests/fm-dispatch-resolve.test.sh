@@ -130,7 +130,14 @@ fi
 if [ "${FAKE_CURL_FAIL:-0}" = 1 ]; then
   exit 7
 fi
-cp "${FAKE_CURL_RESPONSE:?}" "$out"
+# Unless a case supplies its own rule_reversed answer, or sets
+# FAKE_CURL_NO_MIRROR=1 to omit it, the reversed-order answer mirrors the
+# forward one, as an order-insensitive model would answer.
+if [ "${FAKE_CURL_NO_MIRROR:-0}" != 1 ] && jq -e '.answers.rule and (.answers.rule_reversed | not)' "${FAKE_CURL_RESPONSE:?}" >/dev/null 2>&1; then
+  jq '.answers.rule_reversed = .answers.rule' "$FAKE_CURL_RESPONSE" > "$out"
+else
+  cp "${FAKE_CURL_RESPONSE:?}" "$out"
+fi
 printf '%s' "${FAKE_CURL_HTTP:-200}"
 SH
 chmod +x "$FAKEBIN/curl"
@@ -234,10 +241,13 @@ assert_contains "$argv" '@/dev/fd/3' "the header is read from a file descriptor"
 assert_equals "Authorization: Bearer $KEY" "$(cat "$LOG/header")" "curl receives the bearer header on fd 3"
 assert_equals $'curl:clean\nquota-axi:clean' "$(cat "$LOG/child-env")" "the API key is absent from every child environment"
 body=$(cat "$LOG/body")
-assert_equals 'jev-latest' "$(jq -r .model <<<"$body")" "default model is jev-latest"
+assert_equals 'jev-1.13.0' "$(jq -r .model <<<"$body")" "the model is the pinned verified version, not a moving alias"
 assert_equals 'pager' "$(jq -r .state.task.project <<<"$body")" "project rides in the state"
 assert_contains "$(jq -r .state.task.brief <<<"$body")" 'off-by-one in the pager' "a brief without task headings rides whole in the state"
-assert_equals '["rule"]' "$(jq -c '.questions | keys' <<<"$body")" "only the rule Choice is asked"
+assert_equals '["rule","rule_reversed"]' "$(jq -c '.questions | keys' <<<"$body")" "only the rule Choice is asked, once per option order"
+assert_equals '["rule_1","rule_2","rule_3","rule_4","default"]' "$(jq -c '.questions.rule.criteria | keys_unsorted' <<<"$body")" "the forward Choice lists rules in file order"
+assert_equals '["default","rule_4","rule_3","rule_2","rule_1"]' "$(jq -c '.questions.rule_reversed.criteria | keys_unsorted' <<<"$body")" "the reversed Choice lists the same options in reverse order"
+assert_equals 'true' "$(jq '(.questions.rule.instructions == .questions.rule_reversed.instructions) and ((.questions.rule.criteria | to_entries | sort_by(.key)) == (.questions.rule_reversed.criteria | to_entries | sort_by(.key)))' <<<"$body")" "both orders ask the identical question over identical options"
 assert_equals '["default","rule_1","rule_2","rule_3","rule_4"]' "$(jq -c '.questions.rule.criteria | keys' <<<"$body")" "one option per rule plus default"
 assert_equals 'No listed rule applies to this task.' "$(jq -r '.questions.rule.criteria.default' <<<"$body")" "the fixed generic none criterion is the default option"
 assert_equals 'A simple bug fix with a stated root cause.' "$(jq -r '.questions.rule.criteria.rule_4' <<<"$body")" "rule when text is the option verbatim"
@@ -424,6 +434,47 @@ assert_not_contains "$err" 'malformed rules file' "the documented example reache
 cp "$BASE_RULES" "$RULES"
 pass "no-rule fallback, Agy, Gemini, and documented configurations resolve"
 
+# --- option-order average ---------------------------------------------------------
+write_order_response() {  # <path> <forward choice> <forward conf> <forward rule_1..4,default> <reversed choice> <reversed conf> <reversed rule_1..4,default>
+  local fp rp
+  read -r -a fp <<<"$4"
+  read -r -a rp <<<"$7"
+  cat > "$1" <<JSON
+{ "model": "jev-1.13.0",
+  "answers": {
+    "rule": { "type": "choice", "choice": "$2", "confidence": $3,
+      "probabilities": { "rule_1": ${fp[0]}, "rule_2": ${fp[1]}, "rule_3": ${fp[2]}, "rule_4": ${fp[3]}, "default": ${fp[4]} } },
+    "rule_reversed": { "type": "choice", "choice": "$5", "confidence": $6,
+      "probabilities": { "rule_1": ${rp[0]}, "rule_2": ${rp[1]}, "rule_3": ${rp[2]}, "rule_4": ${rp[3]}, "default": ${rp[4]} } } },
+  "usage": { "input_tokens": 1450, "output_tokens": 160 } }
+JSON
+}
+reset_log
+write_order_response "$RESPONSE" rule_1 0.5 "0.55 0 0 0.45 0" rule_4 0.9 "0.05 0 0 0.95 0"
+TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
+assert_contains "$out" '  status: clear' "an order disagreement resolves on the averaged answer"
+assert_contains "$out" '  rule: rule_4 (A simple bug fix with a stated root cause.)   confidence: 0.7' "the most probable averaged option is the pick, with the averaged confidence"
+assert_contains "$out" '  probabilities: rule_1=0.3 rule_2=0 rule_3=0 rule_4=0.7 default=0' "the printed probabilities are the per-option averages"
+assert_contains "$out" '  order: forward=rule_1@0.5 reversed=rule_4@0.9 (averaged)' "each order's own pick and confidence stay inspectable"
+assert_contains "$out" "  profile: --harness 'cursor' --model 'cursor-grok-4.6-medium'" "the averaged rule's profiles are resolved"
+reset_log
+write_order_response "$RESPONSE" rule_4 0.9 "0.05 0 0 0.95 0" rule_4 0.5 "0.45 0 0 0.55 0"
+TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
+assert_contains "$out" '  rule: rule_4 (A simple bug fix with a stated root cause.)   confidence: 0.7' "agreeing orders keep their shared pick at the averaged confidence"
+assert_contains "$out" '  status: clear' "an averaged confidence above the floor is clear"
+reset_log
+write_order_response "$RESPONSE" rule_1 0.7 "0.7 0 0 0.3 0" rule_4 0.7 "0.3 0 0 0.7 0"
+TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
+assert_contains "$out" '  status: ambiguous' "disagreeing orders that average to a tie are ambiguous"
+assert_contains "$out" '  reason: the two option orders average to a tie at the top' "the tie is named"
+assert_not_contains "$out" '  profile:' "an averaged tie emits no profile line"
+reset_log
+write_response "$RESPONSE" rule_4 0.9
+TYPESAFE_API_KEY=$KEY FAKE_CURL_NO_MIRROR=1 run code out err "$BRIEF"
+assert_contains "$out" '  status: error' "a response missing the reversed-order answer is an error outcome"
+assert_contains "$out" '  reason: response is not a pair of rule Choice answers' "both order answers are required"
+pass "option-order average: disagreement, agreement, tie, and a missing order answer"
+
 # --- ambiguous: fixed confidence floor -----------------------------------------
 reset_log
 write_response "$RESPONSE" rule_4 0.41
@@ -491,7 +542,7 @@ reset_log
 write_floor_response "$RESPONSE" rule_2 0.95 0.05 0.55 0.05 0.30 0.05
 TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
 assert_contains "$out" '  status: clear' "a high answer confidence does not lift a picked rule over its own floor"
-assert_contains "$out" '  fallback: rule_4 (A simple bug fix with a stated root cause.) probability 0.30 clears its floor 0.3; rule_2 probability 0.55 is below its floor 0.9' "the runner-up clears the same floor it would need as the pick"
+assert_contains "$out" '  fallback: rule_4 (A simple bug fix with a stated root cause.) probability 0.3 clears its floor 0.3; rule_2 probability 0.55 is below its floor 0.9' "the runner-up clears the same floor it would need as the pick"
 
 reset_log
 write_floor_response "$RESPONSE" rule_2 0.55 0.05 0.55 0.05 0.25 0.10
@@ -900,40 +951,40 @@ assert_contains "$out" '  reason: http 000 after' "transport failure reads as ht
 reset_log
 printf '%s\n' '{"model":"jev","answers":{}}' > "$RESPONSE"
 TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
-assert_contains "$out" '  reason: response is not a rule Choice answer' "a malformed answer is an error outcome"
+assert_contains "$out" '  reason: response is not a pair of rule Choice answers' "a malformed answer is an error outcome"
 reset_log
 write_response "$RESPONSE" rule_4 0.9
 jq '.usage = "bad"' "$RESPONSE" > "$TMP_ROOT/malformed-usage.json"
 mv "$TMP_ROOT/malformed-usage.json" "$RESPONSE"
 TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
 assert_contains "$out" '  status: error' "malformed usage is an error outcome"
-assert_contains "$out" '  reason: response is not a rule Choice answer' "malformed usage cannot break text rendering silently"
+assert_contains "$out" '  reason: response is not a pair of rule Choice answers' "malformed usage cannot break text rendering silently"
 reset_log
 write_response "$RESPONSE" rule_4 0.9
 jq 'del(.answers.rule.probabilities.default)' "$RESPONSE" > "$TMP_ROOT/malformed-probabilities.json"
 mv "$TMP_ROOT/malformed-probabilities.json" "$RESPONSE"
 TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
 assert_contains "$out" '  status: error' "missing probability choice is an error outcome"
-assert_contains "$out" '  reason: response is not a rule Choice answer' "probabilities must name every offered choice"
+assert_contains "$out" '  reason: response is not a pair of rule Choice answers' "probabilities must name every offered choice"
 reset_log
 write_response "$RESPONSE" rule_4 0.9
 jq '.answers.rule.probabilities.rule_4 = "high"' "$RESPONSE" > "$TMP_ROOT/malformed-probabilities.json"
 mv "$TMP_ROOT/malformed-probabilities.json" "$RESPONSE"
 TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
 assert_contains "$out" '  status: error' "nonnumeric probability is an error outcome"
-assert_contains "$out" '  reason: response is not a rule Choice answer' "probabilities must be numeric and bounded"
+assert_contains "$out" '  reason: response is not a pair of rule Choice answers' "probabilities must be numeric and bounded"
 reset_log
 write_response "$RESPONSE" rule_4 0.9
 jq '.answers.rule.probabilities[] = 0' "$RESPONSE" > "$TMP_ROOT/malformed-probabilities.json"
 mv "$TMP_ROOT/malformed-probabilities.json" "$RESPONSE"
 TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
 assert_contains "$out" '  status: error' "a zero-mass probability distribution is an error outcome"
-assert_contains "$out" '  reason: response is not a rule Choice answer' "probabilities must sum to approximately one"
+assert_contains "$out" '  reason: response is not a pair of rule Choice answers' "probabilities must sum to approximately one"
 reset_log
 write_response "$RESPONSE" rule_4 2
 TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
 assert_contains "$out" '  status: error' "out-of-range confidence is an error outcome"
-assert_contains "$out" '  reason: response is not a rule Choice answer' "out-of-range confidence is a malformed answer"
+assert_contains "$out" '  reason: response is not a pair of rule Choice answers' "out-of-range confidence is a malformed answer"
 reset_log
 write_response "$RESPONSE" rule_9 0.9
 TYPESAFE_API_KEY=$KEY run code out err "$BRIEF"
