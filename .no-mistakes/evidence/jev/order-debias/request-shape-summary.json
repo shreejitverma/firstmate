@@ -1,0 +1,32 @@
+{
+  "model": "jev-latest",
+  "question_ids": [
+    "rule",
+    "rule_reversed"
+  ],
+  "forward_order": [
+    "rule_1",
+    "rule_2",
+    "rule_3",
+    "rule_4",
+    "rule_5",
+    "rule_6",
+    "default"
+  ],
+  "reversed_order": [
+    "default",
+    "rule_6",
+    "rule_5",
+    "rule_4",
+    "rule_3",
+    "rule_2",
+    "rule_1"
+  ],
+  "identical_instructions": true,
+  "identical_option_text": true,
+  "state_keys": [
+    "brief",
+    "project"
+  ],
+  "request_bytes": 1756
+}

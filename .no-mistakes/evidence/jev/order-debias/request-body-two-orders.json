@@ -1,0 +1,37 @@
+{
+  "model": "jev-latest",
+  "state": {
+    "task": {
+      "project": "lab",
+      "brief": "# Task\nFix the off-by-one in the pager: the root cause is the `<=` on line 40 of pager.sh; expected behavior is one page per call.\n"
+    }
+  },
+  "questions": {
+    "rule": {
+      "type": "choice",
+      "instructions": "Which ONE dispatch rule best fits `task` (read `task.brief` and `task.project`)? Each option is the rule's own matching condition; pick `default` when no rule's condition is met, including when a rule's own exemption text excludes this task.",
+      "criteria": {
+        "rule_1": "Unusually difficult or high-risk engineering that needs the strongest reasoning model.",
+        "rule_2": "Routine feature, port, or installer build within an existing codebase.",
+        "rule_3": "A bug fix with a stated root cause.",
+        "rule_4": "Trivial mechanical edits such as renames, typo fixes, or dependency bumps.",
+        "rule_5": "Documentation-only edits.",
+        "rule_6": "A read-only investigation or audit that produces a report.",
+        "default": "No listed rule applies to this task."
+      }
+    },
+    "rule_reversed": {
+      "type": "choice",
+      "instructions": "Which ONE dispatch rule best fits `task` (read `task.brief` and `task.project`)? Each option is the rule's own matching condition; pick `default` when no rule's condition is met, including when a rule's own exemption text excludes this task.",
+      "criteria": {
+        "default": "No listed rule applies to this task.",
+        "rule_6": "A read-only investigation or audit that produces a report.",
+        "rule_5": "Documentation-only edits.",
+        "rule_4": "Trivial mechanical edits such as renames, typo fixes, or dependency bumps.",
+        "rule_3": "A bug fix with a stated root cause.",
+        "rule_2": "Routine feature, port, or installer build within an existing codebase.",
+        "rule_1": "Unusually difficult or high-risk engineering that needs the strongest reasoning model."
+      }
+    }
+  }
+}

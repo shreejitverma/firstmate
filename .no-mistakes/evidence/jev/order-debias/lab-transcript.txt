@@ -1,0 +1,86 @@
+=== S1 clear-cut bug fix, new resolver
+$ SIM_BASE='{"rule_3":0.97,"rule_1":0.01,"rule_2":0.01,"rule_4":0.005,"rule_5":0.0,"rule_6":0.0,"default":0.005}' SIM_LEAN=0.01 SIM_MODE=normal FM_HOME=$LAB/home bin/fm-dispatch-resolve.sh bugfix.md --project lab
+dispatch-resolve:
+  status: clear
+  model: jev-sim (stand-in for jev-latest)   latency_ms: 139   tokens: 1432/120
+  rule: rule_3 (A bug fix with a stated root cause.)   confidence: 0.9603
+  probabilities: rule_1=0.0149 rule_2=0.0099 rule_3=0.9603 rule_4=0.005 rule_5=0 rule_6=0 default=0.01
+  order: forward=rule_3@0.9603 reversed=rule_3@0.9603 (averaged)
+  note: rule matched
+  candidate: cursor:cursor-grok-4.6-medium  provider=cursor  scope=all_models  remaining=91%  spendPriority=0.7  runway=through_reset  -> eligible
+  profile: --harness 'cursor' --model 'cursor-grok-4.6-medium'
+[exit 0] [api calls: 1]
+
+=== S2 borderline split (first-listed lean 0.15), BEFORE (base d01a776)
+$ SIM_BASE='{"rule_1":0.22,"rule_2":0.62,"default":0.16}' SIM_LEAN=0.15 SIM_MODE=normal FM_HOME=$LAB/home /var/folders/8l/kzhwlm_x2hb8b1rslwrfp8qm0000gn/T//fm-lab.K5qVEU/old/bin/fm-dispatch-resolve.sh split.md --project lab
+dispatch-resolve:
+  status: ambiguous
+  model: jev-sim (stand-in for jev-latest)   latency_ms: 29   tokens: 733/60
+  rule: rule_2 (Routine feature, port, or installer build within an existing)   confidence: 0.527
+  probabilities: rule_1=0.337 rule_2=0.527 rule_3=0 rule_4=0 rule_5=0 rule_6=0 default=0.136
+  reason: confidence 0.527 below floor 0.6
+  candidate: claude:opus  provider=claude  scope=all_models  remaining=79%  spendPriority=0.2  runway=through_reset  -> eligible
+  candidate: cursor:cursor-grok-4.6-high  provider=cursor  scope=all_models  remaining=91%  spendPriority=0.7  runway=through_reset  -> eligible
+[exit 0] [api calls: 1]
+
+=== S2 borderline split (first-listed lean 0.15), AFTER
+$ SIM_BASE='{"rule_1":0.22,"rule_2":0.62,"default":0.16}' SIM_LEAN=0.15 SIM_MODE=normal FM_HOME=$LAB/home bin/fm-dispatch-resolve.sh split.md --project lab
+dispatch-resolve:
+  status: ambiguous
+  model: jev-sim (stand-in for jev-latest)   latency_ms: 23   tokens: 1433/120
+  rule: rule_2 (Routine feature, port, or installer build within an existing)   confidence: 0.527
+  probabilities: rule_1=0.262 rule_2=0.527 rule_3=0 rule_4=0 rule_5=0 rule_6=0 default=0.211
+  order: forward=rule_2@0.527 reversed=rule_2@0.527 (averaged)
+  reason: confidence 0.527 below floor 0.6
+  candidate: claude:opus  provider=claude  scope=all_models  remaining=79%  spendPriority=0.2  runway=through_reset  -> eligible
+  candidate: cursor:cursor-grok-4.6-high  provider=cursor  scope=all_models  remaining=91%  spendPriority=0.7  runway=through_reset  -> eligible
+[exit 0] [api calls: 1]
+
+=== S3 port where position alone clears the floor for rule_1, BEFORE (base d01a776)
+$ SIM_BASE='{"rule_1":0.46,"rule_2":0.50,"default":0.04}' SIM_LEAN=0.30 SIM_MODE=normal FM_HOME=$LAB/home /var/folders/8l/kzhwlm_x2hb8b1rslwrfp8qm0000gn/T//fm-lab.K5qVEU/old/bin/fm-dispatch-resolve.sh port.md --project lab
+dispatch-resolve:
+  status: clear
+  model: jev-sim (stand-in for jev-latest)   latency_ms: 25   tokens: 734/60
+  rule: rule_1 (Unusually difficult or high-risk engineering that needs the )   confidence: 0.622
+  probabilities: rule_1=0.622 rule_2=0.35 rule_3=0 rule_4=0 rule_5=0 rule_6=0 default=0.028
+  note: rule matched
+  candidate: claude:fable  provider=claude  scope=model:fable  remaining=60%  spendPriority=0.1  runway=through_reset  bounds=all_models:79%/through_reset,model:fable:60%/through_reset  -> eligible
+  profile: --harness 'claude' --model 'fable' --effort 'xhigh'
+[exit 0] [api calls: 1]
+
+=== S3 port where position alone clears the floor for rule_1, AFTER
+$ SIM_BASE='{"rule_1":0.46,"rule_2":0.50,"default":0.04}' SIM_LEAN=0.30 SIM_MODE=normal FM_HOME=$LAB/home bin/fm-dispatch-resolve.sh port.md --project lab
+dispatch-resolve:
+  status: ambiguous
+  model: jev-sim (stand-in for jev-latest)   latency_ms: 25   tokens: 1434/120
+  rule: rule_1 (Unusually difficult or high-risk engineering that needs the )   confidence: 0.486
+  probabilities: rule_1=0.472 rule_2=0.35 rule_3=0 rule_4=0 rule_5=0 rule_6=0 default=0.178
+  order: forward=rule_1@0.622 reversed=rule_2@0.35 (averaged)
+  reason: the two option orders disagree: forward rule_1, reversed rule_2
+  candidate: claude:fable  provider=claude  scope=model:fable  remaining=60%  spendPriority=0.1  runway=through_reset  bounds=all_models:79%/through_reset,model:fable:60%/through_reset  -> eligible
+[exit 0] [api calls: 1]
+
+=== S4 response missing rule_reversed
+$ SIM_BASE='{"rule_3":0.97,"rule_1":0.01,"rule_2":0.01,"rule_4":0.005,"rule_5":0.0,"rule_6":0.0,"default":0.005}' SIM_LEAN=0.01 SIM_MODE=drop_reversed FM_HOME=$LAB/home bin/fm-dispatch-resolve.sh bugfix.md --project lab
+dispatch-resolve: error (response is not a pair of rule Choice answers)
+dispatch-resolve:
+  status: error
+  reason: response is not a pair of rule Choice answers
+[exit 0] [api calls: 1]
+
+=== S5 reversed order alone returns unknown rule_9
+$ SIM_BASE='{"rule_3":0.97,"rule_1":0.01,"rule_2":0.01,"rule_4":0.005,"rule_5":0.0,"rule_6":0.0,"default":0.005}' SIM_LEAN=0.01 SIM_MODE=unknown_reversed FM_HOME=$LAB/home bin/fm-dispatch-resolve.sh bugfix.md --project lab
+dispatch-resolve:
+  status: error
+  model: jev-sim (stand-in for jev-latest)   latency_ms: 24   tokens: 1432/120
+  rule: rule_3 (A bug fix with a stated root cause.)   confidence: 0.9603
+  probabilities: rule_1=0.0149 rule_2=0.0099 rule_3=0.9603 rule_4=0.005 rule_5=0 rule_6=0 default=0.01
+  order: forward=rule_3@0.9603 reversed=rule_9@0.9603 (averaged)
+  reason: rule rule_9 is not in the rules file
+[exit 0] [api calls: 1]
+
+=== S6 key absent: opt-in gate off
+$ SIM_BASE='{"rule_3":0.97,"rule_1":0.01,"rule_2":0.01,"rule_4":0.005,"rule_5":0.0,"rule_6":0.0,"default":0.005}' SIM_LEAN=0.01 SIM_MODE=normal FM_HOME=$LAB/home bin/fm-dispatch-resolve.sh bugfix.md --project lab
+dispatch-resolve: off (TYPESAFE_API_KEY absent from the environment and /var/folders/8l/kzhwlm_x2hb8b1rslwrfp8qm0000gn/T//fm-lab.K5qVEU/home/.env)
+[exit 0] [api calls: 0]
+
