@@ -483,7 +483,8 @@ RESULT=$(jq -n --arg floor "$CONFIDENCE_FLOOR" --argjson lat "$LAT_MS" --arg non
    elif $rule == null then profiles($cfg.default // null)
    else profiles($rule.use)
    end) as $answer_use |
-  (if $choice != "default" and $rule == null then {invalid: "rule \($choice) is not in the rules file"}
+  ([$r.order.forward.choice, $r.order.reversed.choice] | map(select(. != "default" and rule_at(.) == null)) | first) as $unknown |
+  (if $unknown then {invalid: "rule \($unknown) is not in the rules file"}
    elif $rule == null then {source: "default", use: profiles($cfg.default // null), note: "no rule matched"}
    elif ($rule.approval // "") == "captain" then {source: $choice, escalate: "rule requires the captain'"'"'s explicit approval before dispatch"}
    elif $rule_floor_state == "unknown" then {source: $choice, escalate: "rule \($choice) floor \($rule.floor.provider)/\($rule.floor.scope) is unverifiable"}
