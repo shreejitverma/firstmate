@@ -1,0 +1,17 @@
+## merged bootstrap, fork-shaped dispatch config, no TYPESAFE key, verbose facts
+$ cat $LAB/config/crew-dispatch.json
+{"rules":[
+ {"when":"live or post-cutoff research","use":{"harness":"gemini","model":"gemini-3.1-pro"},"why":"fork no-key gemini dispatch"},
+ {"when":"frontier reasoning","select":"ordered","use":[{"harness":"claude","model":"fable","effort":"high"},{"harness":"claude","model":"claude-opus-5-5[1m]","effort":"high"},{"harness":"grok","model":"grok-4.7","effort":"high"},{"harness":"gemini","model":"gemini-3.1-pro"}]},
+ {"when":"polytoken work","use":{"harness":"polytoken"}}
+],
+ "default":[{"harness":"claude","model":"claude-opus-5-5[1m]","effort":"high"},{"harness":"grok","model":"grok-4.7","effort":"high"},{"harness":"gemini","model":"gemini-3.1-pro"}]}
+$ FM_BOOTSTRAP_VERBOSE_FACTS=1 bin/fm-bootstrap.sh
+BOOTSTRAP_INFO: crew dispatch active config/crew-dispatch.json
+BOOTSTRAP_INFO: crew dispatch rule: live or post-cutoff research -> gemini/gemini-3.1-pro
+BOOTSTRAP_INFO: crew dispatch rule: frontier reasoning -> ordered[claude/fable/high, claude/claude-opus-5-5[1m]/high, grok/grok-4.7/high, gemini/gemini-3.1-pro]
+BOOTSTRAP_INFO: crew dispatch rule: polytoken work -> polytoken
+BOOTSTRAP_INFO: crew dispatch default: quota-balanced[claude/claude-opus-5-5[1m]/high, grok/grok-4.7/high, gemini/gemini-3.1-pro]
+fatal: not a git repository (or any of the parent directories): .git
+fatal: not a git repository (or any of the parent directories): .git
+exit=0

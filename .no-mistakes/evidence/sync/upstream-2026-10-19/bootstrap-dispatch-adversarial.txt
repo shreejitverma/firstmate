@@ -1,0 +1,26 @@
+## adversarial 1: unknown select value is still rejected (no TYPESAFE key)
+{"when":"frontier reasoning","select":"mystery","use":[{"harness":"claude","model":"fable","effort":"high"},{"harness":"claude","model":"claude-opus-5-5[1m]","effort":"high"},{"harness":"grok","model":"grok-4.7","effort":"high"},{"harness":"gemini","model":"gemini-3.1-pro"}]}
+CREW_DISPATCH: invalid config/crew-dispatch.json - unknown select: mystery
+exit=0
+
+## adversarial 2: an unverified harness is still rejected even though the fork derives the verified list
+{"when":"polytoken work","use":{"harness":"spaceship"}}
+CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: spaceship
+exit=0
+
+## oracle: upstream-only bootstrap (45dd50a, pre-resolution) on the same valid fork config, no key
+CREW_DISPATCH: invalid config/crew-dispatch.json - unknown select: ordered
+exit=0
+
+## merged bootstrap (7e69301) on the same config again
+exit=0
+
+## oracle 2: plain no-key gemini rule only (ordered rule removed)
+{"rules":[{"when":"live or post-cutoff research","use":{"harness":"gemini","model":"gemini-3.1-pro"},"why":"fork no-key gemini dispatch"},{"when":"polytoken work","use":{"harness":"polytoken"}}],"default":[{"harness":"claude","model":"claude-opus-5-5[1m]","effort":"high"},{"harness":"grok","model":"grok-4.7","effort":"high"},{"harness":"gemini","model":"gemini-3.1-pro"}]}
+-- upstream-only 45dd50a bootstrap:
+CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: gemini
+exit=0
+-- merged 7e69301 bootstrap:
+exit=0
+-- merged 7e69301 bootstrap, polytoken-only rule, no key:
+exit=0
