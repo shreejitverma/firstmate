@@ -203,6 +203,45 @@ That is the same terminal shape the `echo`-provider interrupt produced, now conf
 
 `tests/fm-muse-harness.test.sh` pins the resulting classifier behavior: a log settled by either terminal reads `idle`, an open run reads `busy`, and only a resolution failure reads `unknown`.
 
+## Re-check on 1.4.14 (2026-11-06)
+
+`Muse Code 1.4.14 (1.4.14-R7309.1)`, installed by the launcher's own auto-update on macOS arm64 (Darwin 27.2.0).
+The credentialed turn-to-run smoke above was not repeated: the stored key reaches the provider but every model call fails with HTTP 402 `billing_error`, so only the facts below were re-established.
+
+### A failed run still closes its bracket
+
+A real `meta`-provider run that the provider refused produced one run pair whose terminal is the new value `failed`, and the production fold settles it:
+
+```
+$ muse exec --json --max-model-steps 2 "Reply with exactly: ok"
+run ended with Failed: API error 402 [...]: Billing verification failed. [...] (billing_error)
+
+$ bash -c 'source bin/fm-busy-lib.sh; fm_busy_muse_run_events "$log"; fm_busy_muse_run_state "$log"'
+01a1af47-f359-7b01-afde-1e2a25087de7	started
+01a1af47-f359-7b01-afde-1e2a25087de7	terminal	failed
+settled
+```
+
+The session-log path layout, the `runtime.session.metadata` first record, and the `{"kind":"run",...,"event":{"kind":"started"|"terminal"}}` shape are unchanged from 0.1.0.
+
+### Native personal rules survive the privacy switch
+
+Each run used an isolated `HOME`, `XDG_CONFIG_HOME`, and `XDG_DATA_HOME`, the offline `--provider echo`, and a throwaway git workspace; a marker in each candidate file shows which ones reached the session log:
+
+```
+$ muse exec --provider echo hi        # candidates under .config/muse/ and .muse/
+MARKER_1 .config/muse/AGENTS.md       # only this one loaded; "source_kind":"native", path="$CONFIG_DIR/AGENTS.md"
+
+case                     loaded
+both-present-nokill      NATIVE_MARK
+foreign-only-nokill      FOREIGN_MARK
+both-present-kill        NATIVE_MARK
+foreign-only-kill        (none)
+```
+
+`NATIVE_MARK` lives in `$XDG_CONFIG_HOME/muse/AGENTS.md` and `FOREIGN_MARK` in `~/.claude/CLAUDE.md`; `kill` sets `MUSE_EXPERIMENTAL_FOREIGN_PERSONAL_CONTEXT_KILL=on`.
+A native file therefore replaces the foreign fallback, and the switch removes only the foreign one.
+
 ## Refreshing this record
 
 Run both live guards after any muse upgrade, because the version-suffixed process name, session protocol, and styled composer are vendor-controlled surfaces:
