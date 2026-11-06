@@ -143,6 +143,11 @@ fm_quota_json_valid() {
   ' >/dev/null 2>&1
 }
 
+# Each right-hand value is a quota-axi provider id exactly as quota-axi emits it
+# in `provider` and accepts in `--provider`, never a vendor, account, or
+# credential name: a value quota-axi never emits silently reads as unknown
+# runway, which keeps the harness eligible even when its quota is exhausted.
+# muse is `muse` there; `meta` is only its provider family and Keychain account.
 fm_quota_single_provider_table() {
   printf '%s\n' \
     'claude claude' \
@@ -151,7 +156,7 @@ fm_quota_single_provider_table() {
     'kimi kimi' \
     'cursor cursor' \
     'agy agy' \
-    'muse meta'
+    'muse muse'
 }
 
 # Reads the whole table before answering: leaving the loop early closes the
@@ -182,7 +187,7 @@ fm_quota_provider_for_harness() {
     grok)         printf 'grok\n' ;;
     kimi)         printf 'kimi\n' ;;
     cursor)       printf 'cursor\n' ;;
-    muse)         printf 'meta\n' ;;
+    muse)         printf 'muse\n' ;;
     *)            return 1 ;;
   esac
 }

@@ -39,6 +39,7 @@ Its notice names Claude personal rules and `/settings` but appears only once thr
 
 Interactive Muse rejects exec-only `--no-foreign-personal-context`.
 The pane control is `MUSE_EXPERIMENTAL_FOREIGN_PERSONAL_CONTEXT_KILL=on`, set on every spawn and verified to remove foreign `rules_file` while retaining project `AGENTS.md`.
+It also retains Muse's native personal rules file, `$XDG_CONFIG_HOME/muse/AGENTS.md`, whose presence replaces the foreign fallback outright, so whatever the operator places there reaches every Muse crewmate and Meta-hosted inference with it (verified 2026-11-06 on 1.4.14-R7309.1).
 
 ## Session event log
 
@@ -46,7 +47,7 @@ Logs live at `${XDG_DATA_HOME:-$HOME/.local/share}/muse/sessions/YYYY/MM/DD/<ses
 The spawn writes `state/<id>.muse-session` with root, worktree, binding incarnation, and pre-existing matching main logs, then unique resolution pins `state/<id>.muse-session-current`.
 It folds that path while the bounded current-day main namespace is unchanged and resolves again if the namespace changes, path disappears, or a newer binding wins.
 
-Turns are bracketed by `{"payload":{"kind":"run","run_id":"<uuid>","event":{"kind":"started"` and matching `"event":{"kind":"terminal"`, observed as `completed` or `cancelled`.
+Turns are bracketed by `{"payload":{"kind":"run","run_id":"<uuid>","event":{"kind":"started"` and matching `"event":{"kind":"terminal"`, observed as `completed`, `cancelled`, or `failed` (a provider error such as HTTP 402 billing, observed on 1.4.14-R7309.1); every terminal value settles the fold.
 Interrupt therefore has a real terminal, unlike Claude Stop.
 Never use `--no-session-log`, which removes Muse's only busy source.
 
