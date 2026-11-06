@@ -1,0 +1,15 @@
+$ QUOTA_AXI_SNAPSHOT=<missing> quota-axi --provider muse --json
+error: "QUOTA_AXI_SNAPSHOT is not a readable quota snapshot: /var/folders/8l/kzhwlm_x2hb8b1rslwrfp8qm0000gn/T/tmp.FrTcNl8W2b/absent.json"
+code: VALIDATION_ERROR
+help[1]: "Point QUOTA_AXI_SNAPSHOT at a quota-axi cache file, or unset it"
+exit=2
+$ QUOTA_AXI_SNAPSHOT=<missing> quota-axi --provider meta --json
+error: "unsupported provider: meta"
+code: VALIDATION_ERROR
+help[1]: "Supported providers: claude, codex, cursor, copilot, grok, kimi, zai, agy, alibaba, opencode-go, commandcode, minimax, mimo, deepseek, openrouter, elevenlabs, devin, muse, higgsfield"
+exit=2
+$ QUOTA_AXI_SNAPSHOT=<missing> quota-axi --provider fm-no-such-provider --json
+error: "unsupported provider: fm-no-such-provider"
+code: VALIDATION_ERROR
+help[1]: "Supported providers: claude, codex, cursor, copilot, grok, kimi, zai, agy, alibaba, opencode-go, commandcode, minimax, mimo, deepseek, openrouter, elevenlabs, devin, muse, higgsfield"
+exit=2

@@ -1,0 +1,14 @@
+$ bash tests/fm-quota-provider-ids-live-e2e.test.sh   # fix (target 2c183f2)
+ok - quota-axi 0.1.69 rejects an unknown provider id
+ok - all 7 single-provider harnesses map to quota-axi 0.1.69 provider ids, and the legacy chooser agrees wherever it covers one
+ok - muse quota is read from quota-axi's muse provider
+exit=0
+
+$ bash <base e4675f9 tree>/tests/fm-quota-provider-ids-live-e2e.test.sh   # same guard against base mapping
+ok - quota-axi 0.1.69 rejects an unknown provider id
+not ok - single-provider table maps harness muse to 'meta', which quota-axi 0.1.69 does not support
+exit=1
+
+$ FM_QUOTA_PROVIDER_IDS_LIVE=0 bash tests/fm-quota-provider-ids-live-e2e.test.sh   # opt-out
+skip: live: disabled by FM_QUOTA_PROVIDER_IDS_LIVE=0
+exit=0

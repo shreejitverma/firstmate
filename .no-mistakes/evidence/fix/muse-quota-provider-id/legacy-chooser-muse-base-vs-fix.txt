@@ -1,0 +1,6 @@
+[base] snapshot=real candidate=muse:default -> 'none' exit=1
+[fix] snapshot=real candidate=muse:default -> 'none' exit=1
+[base] snapshot=exhausted candidate=muse:default -> 'none' exit=1
+[fix] snapshot=exhausted candidate=muse:default -> 'none' exit=1
+[base] snapshot=positive candidate=muse:default -> 'none' exit=1
+[fix] snapshot=positive candidate=muse:default -> 'muse default' exit=0

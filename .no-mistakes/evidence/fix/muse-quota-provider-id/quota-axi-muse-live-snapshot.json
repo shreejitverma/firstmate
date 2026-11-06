@@ -1,0 +1,27 @@
+{
+  "generatedAt": "2026-11-06T05:37:34.667Z",
+  "schemaVersion": 5,
+  "providers": [
+    {
+      "provider": "muse",
+      "windows": [],
+      "state": {
+        "status": "error",
+        "stale": false,
+        "error": "keychain_prompt_required",
+        "reason": "keychain_access_required",
+        "remedyCommand": "quota-axi --allow-keychain-prompt"
+      },
+      "quotaSemantics": {
+        "status": "unknown",
+        "effectiveAvailability": []
+      },
+      "accountKeys": [
+        "default"
+      ]
+    }
+  ],
+  "help": [
+    "Tell your user: run `quota-axi --allow-keychain-prompt` once and approve Keychain access (\"Always Allow\") so quota-axi can read muse's live quota."
+  ]
+}

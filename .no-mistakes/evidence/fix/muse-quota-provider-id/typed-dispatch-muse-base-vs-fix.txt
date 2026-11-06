@@ -1,0 +1,22 @@
+=== [base] quota=muse-exh (claude healthy) rule use=[muse:default, claude:opus]
+  status: clear
+  note: 1 eligible candidate(s) unranked (meta)
+  candidate: muse:default  provider=meta  -> eligible, unranked: provider meta not in the quota snapshot: disclosed uncertainty
+  candidate: claude:opus  provider=claude  scope=all_models  remaining=60%  spendPriority=0.1  runway=through_reset  -> eligible
+  profile: --harness 'claude' --model 'opus'
+=== [fix] quota=muse-exh (claude healthy) rule use=[muse:default, claude:opus]
+  status: clear
+  candidate: muse:default  provider=muse  scope=all_models  remaining=0%  spendPriority=-  runway=exhausted_now  -> not eligible: runway exhausted_now at all_models
+  candidate: claude:opus  provider=claude  scope=all_models  remaining=60%  spendPriority=0.1  runway=through_reset  -> eligible
+  profile: --harness 'claude' --model 'opus'
+=== [base] quota=muse-pos (claude healthy) rule use=[muse:default, claude:opus]
+  status: clear
+  note: 1 eligible candidate(s) unranked (meta)
+  candidate: muse:default  provider=meta  -> eligible, unranked: provider meta not in the quota snapshot: disclosed uncertainty
+  candidate: claude:opus  provider=claude  scope=all_models  remaining=60%  spendPriority=0.1  runway=through_reset  -> eligible
+  profile: --harness 'claude' --model 'opus'
+=== [fix] quota=muse-pos (claude healthy) rule use=[muse:default, claude:opus]
+  status: clear
+  candidate: muse:default  provider=muse  scope=all_models  remaining=40%  spendPriority=0.9  runway=through_reset  -> eligible
+  candidate: claude:opus  provider=claude  scope=all_models  remaining=60%  spendPriority=0.1  runway=through_reset  -> eligible
+  profile: --harness 'muse' --model 'default'

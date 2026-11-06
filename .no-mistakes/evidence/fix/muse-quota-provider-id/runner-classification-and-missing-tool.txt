@@ -1,0 +1,9 @@
+$ bin/fm-test-run.sh --list --family live-harness-optin | grep quota
+tests/fm-quota-array-dispatch-live-e2e.test.sh
+tests/fm-quota-provider-ids-live-e2e.test.sh
+exit=0
+
+$ PATH=<homebrew minus quota-axi>:/usr/bin:/bin bash tests/fm-quota-provider-ids-live-e2e.test.sh   # quota-axi absent
+(quota-axi not on PATH)
+skip: live: quota-axi absent
+exit=0
