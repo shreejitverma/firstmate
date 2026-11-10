@@ -1,0 +1,26 @@
+# Live drive of bin/fm-dispatch-resolve.sh, localhost emulator, quota fixture adds google 72% sp=-0.9, muse 12%, meta 99%
+## S5 gemini profile under typed resolution, select ordered
+dispatch-resolve:
+  status: clear
+  model: emu-1   latency_ms: 50   tokens: 10/2
+  rule: rule_2 (A simple bug fix with a stated root cause.)   confidence: 0.8
+  probabilities: rule_1=0.07 rule_2=0.86 default=0.07
+  order: forward=rule_2@0.8 reversed=rule_2@0.8 (averaged)
+  note: rule matched; ordered: first eligible in declared order
+  candidate: gemini:gemini-3.8-flash-high  provider=google  scope=all_models  remaining=72%  spendPriority=-0.9  runway=through_reset  -> eligible
+  candidate: cursor:cursor-grok-4.6-medium  provider=cursor  scope=all_models  remaining=91%  spendPriority=0.76  runway=through_reset  -> eligible
+  profile: --harness 'gemini' --model 'gemini-3.8-flash-high'
+exit=0
+
+## S7 muse profile binds to quota-axi muse row (12%), not meta (99%); floor 50
+dispatch-resolve:
+  status: clear
+  model: emu-1   latency_ms: 19   tokens: 10/2
+  rule: rule_2 (A simple bug fix with a stated root cause.)   confidence: 0.8
+  probabilities: rule_1=0.07 rule_2=0.86 default=0.07
+  order: forward=rule_2@0.8 reversed=rule_2@0.8 (averaged)
+  note: rule matched; ordered: first eligible in declared order
+  candidate: muse:muse-spark  provider=muse  scope=all_models  remaining=12%  spendPriority=-  runway=through_reset  -> not eligible: profile floor all_models below 50%
+  candidate: cursor:cursor-grok-4.6-medium  provider=cursor  scope=all_models  remaining=91%  spendPriority=0.76  runway=through_reset  -> eligible
+  profile: --harness 'cursor' --model 'cursor-grok-4.6-medium'
+exit=0

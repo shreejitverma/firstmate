@@ -1,0 +1,152 @@
+# Live drive of bin/fm-dispatch-resolve.sh (commit 079a6bdf) through real curl to a localhost System One emulator (TYPESAFE_BASE=http://127.0.0.1:<port>, synthetic key), fake quota-axi fixture: claude 79% sp=-0.46, cursor 91% sp=0.76, kimi unmeasured.
+# Emulator modes: content = picks the option mentioning 'bug fix' with a +0.04 lean to the first-listed option; position = always picks the first-listed option; missing = omits the rule_reversed answer.
+
+## S1a agreeing orders (content), select ordered
+dispatch-resolve:
+  status: clear
+  model: emu-1   latency_ms: 21   tokens: 10/2
+  rule: rule_3 (A simple bug fix with a stated root cause.)   confidence: 0.8
+  probabilities: rule_1=0.0533 rule_2=0.0333 rule_3=0.86 default=0.0533
+  order: forward=rule_3@0.8 reversed=rule_3@0.8 (averaged)
+  note: rule matched; ordered: first eligible in declared order
+  candidate: claude:sonnet  provider=claude  scope=all_models  remaining=79%  spendPriority=-0.46  runway=projected_exhaustion  -> eligible
+  candidate: cursor:cursor-grok-4.6-medium  provider=cursor  scope=all_models  remaining=91%  spendPriority=0.76  runway=through_reset  -> eligible
+  candidate: kimi:kimi-code/k3  provider=kimi  -> eligible, unranked: provider kimi unmeasured (unknown): disclosed uncertainty
+  profile: --harness 'claude' --model 'sonnet' --effort 'high'
+exit=0
+request questions/option order:
+{"path":"/v1/systemone","auth":true,"q":{"rule":["rule_1","rule_2","rule_3","default"],"rule_reversed":["default","rule_3","rule_2","rule_1"]}}
+
+## S1b disagreeing orders (position-biased model)
+dispatch-resolve:
+  status: ambiguous
+  model: emu-1   latency_ms: 22   tokens: 10/2
+  rule: rule_1 (New feature work on the app.)   confidence: 0.9
+  probabilities: rule_1=0.4667 rule_2=0.0333 rule_3=0.0333 default=0.4667
+  order: forward=rule_1@0.9 reversed=default@0.9 (averaged)
+  reason: the two option orders disagree: forward rule_1, reversed default
+  candidate: claude:fable  provider=claude  scope=all_models  remaining=79%  spendPriority=-0.46  runway=projected_exhaustion  -> eligible
+exit=0
+
+## S1c missing reversed answer
+dispatch-resolve: error (response is not a pair of rule Choice answers)
+dispatch-resolve:
+  status: error
+  reason: response is not a pair of rule Choice answers
+exit=0
+quota-axi calls: 0
+
+## S2a contrast: same rule without select ordered (spendPriority argmax)
+dispatch-resolve:
+  status: clear
+  model: emu-1   latency_ms: 20   tokens: 10/2
+  rule: rule_3 (A simple bug fix with a stated root cause.)   confidence: 0.8
+  probabilities: rule_1=0.0533 rule_2=0.0333 rule_3=0.86 default=0.0533
+  order: forward=rule_3@0.8 reversed=rule_3@0.8 (averaged)
+  note: rule matched
+  note: 1 eligible candidate(s) unranked (kimi)
+  candidate: claude:sonnet  provider=claude  scope=all_models  remaining=79%  spendPriority=-0.46  runway=projected_exhaustion  -> eligible
+  candidate: cursor:cursor-grok-4.6-medium  provider=cursor  scope=all_models  remaining=91%  spendPriority=0.76  runway=through_reset  -> eligible
+  candidate: kimi:kimi-code/k3  provider=kimi  -> eligible, unranked: provider kimi unmeasured (unknown): disclosed uncertainty
+  profile: --harness 'cursor' --model 'cursor-grok-4.6-medium'
+exit=0
+
+## S2b ordered, first candidate below its floor
+dispatch-resolve:
+  status: clear
+  model: emu-1   latency_ms: 21   tokens: 10/2
+  rule: rule_3 (A simple bug fix with a stated root cause.)   confidence: 0.8
+  probabilities: rule_1=0.0533 rule_2=0.0333 rule_3=0.86 default=0.0533
+  order: forward=rule_3@0.8 reversed=rule_3@0.8 (averaged)
+  note: rule matched; ordered: first eligible in declared order
+  candidate: claude:sonnet  provider=claude  scope=all_models  remaining=79%  spendPriority=-  runway=projected_exhaustion  -> not eligible: profile floor all_models below 90%
+  candidate: cursor:cursor-grok-4.6-medium  provider=cursor  scope=all_models  remaining=91%  spendPriority=0.76  runway=through_reset  -> eligible
+  candidate: kimi:kimi-code/k3  provider=kimi  -> eligible, unranked: provider kimi unmeasured (unknown): disclosed uncertainty
+  profile: --harness 'cursor' --model 'cursor-grok-4.6-medium'
+exit=0
+
+## S2c ordered, no candidate eligible
+dispatch-resolve:
+  status: escalate
+  model: emu-1   latency_ms: 21   tokens: 10/2
+  rule: rule_2 (A simple bug fix with a stated root cause.)   confidence: 0.8
+  probabilities: rule_1=0.07 rule_2=0.86 default=0.07
+  order: forward=rule_2@0.8 reversed=rule_2@0.8 (averaged)
+  reason: no eligible candidate in the declared order of the rule
+  note: rule matched
+  candidate: claude:sonnet  provider=claude  scope=all_models  remaining=79%  spendPriority=-  runway=projected_exhaustion  -> not eligible: profile floor all_models below 90%
+  candidate: cursor:cursor-grok-4.6-medium  provider=cursor  scope=all_models  remaining=91%  spendPriority=-  runway=through_reset  -> not eligible: profile floor all_models below 95%
+exit=0
+
+## S3a ordered + preferred_provider=kimi (unmeasured)
+dispatch-resolve:
+  status: clear
+  model: emu-1   latency_ms: 20   tokens: 10/2
+  rule: rule_3 (A simple bug fix with a stated root cause.)   confidence: 0.8
+  probabilities: rule_1=0.0533 rule_2=0.0333 rule_3=0.86 default=0.0533
+  order: forward=rule_3@0.8 reversed=rule_3@0.8 (averaged)
+  note: rule matched; ordered: first eligible in declared order
+  preferred_provider: kimi: prefer eligible family candidates
+  note: chosen candidate has disclosed quota uncertainty: provider kimi unmeasured (unknown)
+  candidate: claude:sonnet  provider=claude  scope=all_models  remaining=79%  spendPriority=-0.46  runway=projected_exhaustion  -> eligible
+  candidate: cursor:cursor-grok-4.6-medium  provider=cursor  scope=all_models  remaining=91%  spendPriority=0.76  runway=through_reset  -> eligible
+  candidate: kimi:kimi-code/k3  provider=kimi  -> eligible, unranked: provider kimi unmeasured (unknown): disclosed uncertainty
+  profile: --harness 'kimi' --model 'kimi-code/k3'
+exit=0
+
+## S3b ranked + preferred_provider=kimi (unmeasured)
+dispatch-resolve:
+  status: escalate
+  model: emu-1   latency_ms: 20   tokens: 10/2
+  rule: rule_3 (A simple bug fix with a stated root cause.)   confidence: 0.8
+  probabilities: rule_1=0.0533 rule_2=0.0333 rule_3=0.86 default=0.0533
+  order: forward=rule_3@0.8 reversed=rule_3@0.8 (averaged)
+  reason: no rankable eligible candidate in preferred provider kimi; uncertainty does not authorize fallback
+  note: rule matched
+  preferred_provider: kimi: prefer eligible family candidates
+  candidate: claude:sonnet  provider=claude  scope=all_models  remaining=79%  spendPriority=-0.46  runway=projected_exhaustion  -> eligible
+  candidate: cursor:cursor-grok-4.6-medium  provider=cursor  scope=all_models  remaining=91%  spendPriority=0.76  runway=through_reset  -> eligible
+  candidate: kimi:kimi-code/k3  provider=kimi  -> eligible, unranked: provider kimi unmeasured (unknown): disclosed uncertainty
+exit=0
+
+## S3c ordered + preferred_provider=cursor
+dispatch-resolve:
+  status: clear
+  model: emu-1   latency_ms: 21   tokens: 10/2
+  rule: rule_3 (A simple bug fix with a stated root cause.)   confidence: 0.8
+  probabilities: rule_1=0.0533 rule_2=0.0333 rule_3=0.86 default=0.0533
+  order: forward=rule_3@0.8 reversed=rule_3@0.8 (averaged)
+  note: rule matched; ordered: first eligible in declared order
+  preferred_provider: cursor: prefer eligible family candidates
+  candidate: claude:sonnet  provider=claude  scope=all_models  remaining=79%  spendPriority=-0.46  runway=projected_exhaustion  -> eligible
+  candidate: cursor:cursor-grok-4.6-medium  provider=cursor  scope=all_models  remaining=91%  spendPriority=0.76  runway=through_reset  -> eligible
+  candidate: kimi:kimi-code/k3  provider=kimi  -> eligible, unranked: provider kimi unmeasured (unknown): disclosed uncertainty
+  profile: --harness 'cursor' --model 'cursor-grok-4.6-medium'
+exit=0
+
+## S4 shared_quota true, claude floor 90
+dispatch-resolve:
+  status: clear
+  model: emu-1   latency_ms: 22   tokens: 10/2
+  rule: rule_3 (A simple bug fix with a stated root cause.)   confidence: 0.8
+  probabilities: rule_1=0.0533 rule_2=0.0333 rule_3=0.86 default=0.0533
+  order: forward=rule_3@0.8 reversed=rule_3@0.8 (averaged)
+  note: rule matched
+  candidate: claude:sonnet  provider=claude  -> eligible (quota ranking off: home declares a single shared quota)
+  candidate: cursor:cursor-grok-4.6-medium  provider=cursor  -> eligible (quota ranking off: home declares a single shared quota)
+  candidate: kimi:kimi-code/k3  provider=kimi  -> eligible (quota ranking off: home declares a single shared quota)
+  profile: --harness 'claude' --model 'sonnet' --effort 'high'
+exit=0
+quota-axi calls: 0
+
+## S1d systemone provider (no key), position-biased
+dispatch-resolve:
+  status: ambiguous
+  model: emu-1   latency_ms: 20   tokens: 10/2
+  rule: rule_1 (New feature work on the app.)   confidence: 0.9
+  probabilities: rule_1=0.4667 rule_2=0.0333 rule_3=0.0333 default=0.4667
+  order: forward=rule_1@0.9 reversed=default@0.9 (averaged)
+  reason: the two option orders disagree: forward rule_1, reversed default
+  candidate: claude:fable  provider=claude  scope=all_models  remaining=79%  spendPriority=-0.46  runway=projected_exhaustion  -> eligible
+exit=0
+{"path":"/v1/systemone","auth":false,"model":"emu-local","q":{"rule":["rule_1","rule_2","rule_3","default"],"rule_reversed":["default","rule_3","rule_2","rule_1"]}}

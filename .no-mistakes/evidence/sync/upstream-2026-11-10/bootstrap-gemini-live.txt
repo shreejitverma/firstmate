@@ -1,0 +1,11 @@
+# Live drive of bin/fm-bootstrap.sh (commit 079a6bdf) in a disposable lab home (bin/fm-lab-home.sh create), only CREW_DISPATCH lines shown
+## S6a gemini ordered rule, no TYPESAFE_API_KEY
+(no CREW_DISPATCH line: config accepted)
+## S6b same rule, TYPESAFE_API_KEY set
+(no CREW_DISPATCH line: config accepted)
+## S6c unknown harness, no key
+CREW_DISPATCH: invalid config/crew-dispatch.json - unverified harness: not-a-harness
+## S6d resolver-only field approval=Captain, no key (inert)
+(no CREW_DISPATCH line: config accepted)
+## S6e same, with key (validated)
+CREW_DISPATCH: invalid config/crew-dispatch.json - approval must be "captain" when present
